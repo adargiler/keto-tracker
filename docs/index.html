@@ -1,0 +1,1530 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="קיטו וכוח">
+<meta name="theme-color" content="#131110">
+<meta name="robots" content="noindex,nofollow">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<style>body{margin:0;padding-top:env(safe-area-inset-top,0px)}[hidden]{display:none!important}</style>
+<title>יומן קיטו וכוח</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700&family=Karantina:wght@400;700&display=swap">
+<style>
+/* Layout: one phone-width column of quiet cards, sticky header, fixed bottom tabs; scoreboard numerals carry the data. */
+:root{
+  --bg:#131110; --surface:#1c1917; --raised:#272320; --line:#3a342e;
+  --fg:#f3eee6; --muted:#a69d91; --faint:#756c62;
+  --yolk:#f0b23e; --yolk-ink:#291b02; --rare:#e4745e; --ok:#86c98a; --bad:#e4745e;
+  --font-display:'Karantina','Heebo',system-ui,sans-serif;
+  --font-body:'Heebo',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+  --r:16px;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{background:var(--bg)}
+body{
+  color:var(--fg); font-family:var(--font-body); font-size:15px; line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px)); padding-right:max(16px,env(safe-area-inset-right,0px));
+  -webkit-text-size-adjust:100%; -webkit-tap-highlight-color:transparent;
+}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+button,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+h1,h2,h3,h4,p{margin:0}
+:focus-visible{outline:2px solid var(--yolk);outline-offset:2px}
+#app{max-width:560px;margin-inline:auto;padding-bottom:calc(92px + env(safe-area-inset-bottom,0px))}
+#view{display:flex;flex-direction:column;gap:12px}
+[dir="ltr"],bdi{unicode-bidi:isolate}
+.num{font-variant-numeric:tabular-nums}
+
+/* header */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;background:var(--bg);display:flex;align-items:center;justify-content:space-between;gap:12px;padding-block:10px}
+.brand{font-family:var(--font-display);font-size:30px;line-height:1;font-weight:700;letter-spacing:.5px}
+.brand span{color:var(--yolk)}
+.top-side{display:flex;align-items:center;gap:8px}
+.save{font-size:12px;color:var(--muted);padding:4px 10px;border-radius:999px;border:1px solid var(--line);white-space:nowrap}
+.save[data-s="saved"],.save[data-s="local"]{color:var(--ok)}
+.save[data-s="error"]{color:var(--bad);border-color:var(--bad)}
+.tchip{font-variant-numeric:tabular-nums;font-weight:700;font-size:13px;padding:4px 10px;border-radius:999px;border:0;background:var(--yolk);color:var(--yolk-ink)}
+.tchip.done{animation:pulse .6s ease-in-out infinite alternate}
+
+/* date navigation */
+.nav{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.nav-t{flex:1;min-width:0;text-align:center}
+.nav-t h2{font-size:17px;font-weight:700;text-wrap:balance}
+.nav-t button{margin-top:2px;background:none;border:0;color:var(--yolk);font-size:13px;padding:2px 8px}
+.ico{width:44px;height:44px;display:grid;place-items:center;border-radius:12px;border:1px solid var(--line);background:var(--surface)}
+.ico svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.week{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.wd{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 0 7px;border-radius:14px;border:1px solid transparent;background:var(--surface);min-width:0}
+.wd-l{font-size:12px;color:var(--muted)}
+.wd-n{font-size:19px;font-weight:700;line-height:1.2;font-variant-numeric:tabular-nums}
+.wd .dot{width:5px;height:5px;border-radius:50%;background:transparent}
+.wd .dot.on{background:var(--yolk)}
+.wd.is-today{border-color:var(--line)}
+.wd.is-sel{background:var(--yolk);color:var(--yolk-ink)}
+.wd.is-sel .wd-l{color:var(--yolk-ink)}
+.wd.is-sel .dot.on{background:var(--yolk-ink)}
+
+/* cards */
+.card{background:var(--surface);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:12px}
+.card-h{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.card-h h3{font-size:16px;font-weight:700}
+.hint{font-size:12px;color:var(--muted)}
+.mt{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.lbl{font-size:12px;color:var(--muted);letter-spacing:.02em}
+.grp{display:flex;flex-direction:column;gap:6px}
+.sec-h{font-family:var(--font-display);font-size:28px;line-height:1;font-weight:700;letter-spacing:.5px;margin-top:8px}
+
+/* summary */
+.sum{background:var(--surface);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:12px}
+.meter{display:flex;flex-direction:column;gap:6px}
+.meter-h{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.meter-n{display:flex;align-items:baseline;gap:5px;font-variant-numeric:tabular-nums}
+.meter-n b{font-size:28px;line-height:1;font-weight:700;letter-spacing:-.01em}
+.meter-n i{font-style:normal;color:var(--muted);font-size:14px}
+.meter-n small{color:var(--muted);font-size:12px}
+.track{height:8px;border-radius:999px;background:var(--raised);overflow:hidden;direction:rtl}
+.track.thin{height:4px}
+.fill{height:100%;width:0;border-radius:999px;transition:width .3s ease}
+.fill.k{background:var(--yolk)}
+.fill.p{background:var(--rare)}
+.win{display:flex;align-items:center;justify-content:space-between;gap:8px;border-top:1px solid var(--line);padding-top:10px}
+.win-v{font-variant-numeric:tabular-nums;font-weight:500}
+.win-d{color:var(--muted);font-size:13px;font-weight:400}
+.faint{color:var(--faint)}
+
+/* chips */
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{min-height:44px;padding:8px 14px;border-radius:999px;border:1px solid var(--line);background:var(--raised);font-weight:500;text-align:center;line-height:1.25}
+.chip small{display:block;font-size:10px;font-weight:400;color:var(--muted)}
+.chip[aria-pressed="true"]{background:var(--yolk);border-color:var(--yolk);color:var(--yolk-ink)}
+.chip[aria-pressed="true"] small{color:var(--yolk-ink)}
+.chip.is-default:not([aria-pressed="true"]){border-style:dashed;border-color:var(--yolk)}
+.seg4{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.seg4 .chip{border-radius:12px}
+.eggs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.eggs .chip{border-radius:12px;font-size:22px;font-weight:700;line-height:1.1;padding:8px 4px}
+.eggs .chip small{margin-top:2px}
+.link{background:none;border:0;color:var(--yolk);font-size:13px;padding:6px 4px}
+
+/* habits */
+.habit{display:flex;align-items:center;gap:12px;min-height:48px;padding:8px 12px;border-radius:12px;border:1px solid var(--line);background:var(--raised);text-align:start;width:100%}
+.habit .box{flex:none;width:24px;height:24px;border-radius:7px;border:2px solid var(--faint);display:grid;place-items:center}
+.habit .box svg{width:14px;height:14px;stroke:var(--bg);fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;opacity:0}
+.habit[aria-pressed="true"]{border-color:var(--ok)}
+.habit[aria-pressed="true"] .box{background:var(--ok);border-color:var(--ok)}
+.habit[aria-pressed="true"] .box svg{opacity:1}
+.habit span.t{flex:1;min-width:0}
+.tag{font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:1px 8px;white-space:nowrap}
+
+/* inputs */
+input[type="number"],input[type="time"],input[type="date"],textarea{
+  background:var(--raised);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:16px;min-height:44px;min-width:0;
+  font-variant-numeric:tabular-nums;
+}
+input[type="number"]{direction:ltr;text-align:center;-moz-appearance:textfield;appearance:textfield}
+input[type="number"]::-webkit-outer-spin-button,input[type="number"]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+input::placeholder,textarea::placeholder{color:var(--faint)}
+textarea{width:100%;resize:vertical;text-align:start}
+.time-row{display:flex;align-items:center;gap:8px;border-top:1px solid var(--line);padding-top:10px}
+.time-row label{font-size:13px;color:var(--muted)}
+.time-row input{direction:ltr;width:128px}
+.ghost{min-height:44px;padding:6px 12px;border-radius:10px;border:1px solid var(--line);background:none;font-size:13px}
+.btn{min-height:44px;padding:8px 16px;border-radius:12px;border:0;background:var(--yolk);color:var(--yolk-ink);font-weight:700;display:inline-grid;place-items:center;text-align:center}
+.btn.alt{background:var(--raised);color:var(--fg);border:1px solid var(--line);font-weight:500}
+
+/* food items */
+.frow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 10px;align-items:center;padding:10px 12px;border-radius:12px;border:1px solid var(--yolk);background:var(--raised)}
+.fname{font-weight:500;min-width:0}
+.fname small{display:block;font-size:12px;color:var(--muted);font-weight:400;font-variant-numeric:tabular-nums}
+.stp{display:inline-flex;align-items:center;gap:2px}
+.stp button{width:44px;height:44px;border-radius:10px;border:1px solid var(--line);background:var(--surface);font-size:20px;line-height:1}
+.stp b{min-width:36px;text-align:center;font-size:18px;font-variant-numeric:tabular-nums}
+.stp input{width:56px;padding-inline:2px;font-size:18px;font-weight:700}
+.fmeta{grid-column:1/-1;display:flex;align-items:center;flex-wrap:wrap;gap:6px 8px;font-size:12px;color:var(--muted)}
+.fmeta input{width:84px}
+.eggstep{display:flex;align-items:center;justify-content:space-between;gap:10px}
+
+/* workout */
+.timer{position:sticky;top:calc(env(safe-area-inset-top,0px) + 50px);z-index:5;background:var(--raised);border:1px solid var(--line);border-radius:var(--r);padding:8px 10px;display:grid;grid-template-columns:62px repeat(3,minmax(0,1fr)) 44px;gap:6px;align-items:center}
+.timer-n{font-size:24px;line-height:1;font-weight:700;font-variant-numeric:tabular-nums;color:var(--faint);text-align:center}
+.timer.run .timer-n{color:var(--yolk)}
+.timer.done{border-color:var(--ok);animation:pulse .6s ease-in-out infinite alternate}
+.timer.done .timer-n{color:var(--ok);font-size:18px}
+.timer button{min-height:44px;border-radius:10px;border:1px solid var(--line);background:var(--surface);font-weight:500;font-size:14px;padding:4px;display:grid;place-items:center}
+.timer button svg{width:14px;height:14px;fill:currentColor}
+.timer .track{grid-column:1/-1}
+@keyframes pulse{from{opacity:1}to{opacity:.55}}
+.ex{background:var(--surface);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:10px}
+.ex-h{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.ex-h h4{font-size:15px;font-weight:700;line-height:1.3}
+.ex-h .en{display:block;font-size:12px;color:var(--muted);font-weight:400}
+.demo{flex:none;min-height:36px;display:inline-grid;place-items:center;padding:4px 10px;border-radius:999px;border:1px solid var(--line);color:var(--fg);text-decoration:none;font-size:12px;white-space:nowrap}
+.ex-m{display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px;font-size:12px;color:var(--muted)}
+.ex-m .target{font-size:16px;font-weight:700;line-height:1.2;color:var(--yolk)}
+.ex-c{display:flex;flex-wrap:wrap;gap:8px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{min-height:40px;padding:4px 12px;border:0;background:none;font-size:13px;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--raised);color:var(--yolk);font-weight:700}
+.last{font-size:12px;color:var(--muted)}
+.sets{display:flex;flex-direction:column;gap:6px}
+.set,.set-head{display:grid;grid-template-columns:20px minmax(0,1fr) minmax(0,1fr) minmax(0,1.15fr) 44px;gap:6px;align-items:center}
+.set.one,.set-head.one{grid-template-columns:20px minmax(0,1fr) minmax(0,1.15fr) 44px}
+.set-head{font-size:11px;color:var(--muted);text-align:center}
+.set .n{font-size:14px;font-weight:700;color:var(--muted);text-align:center}
+.set input{width:100%;padding-inline:4px}
+.hb{font-size:11px;line-height:1.25;color:var(--muted);text-align:center;min-width:0}
+.hb b{display:block;font-size:13px;color:var(--fg);font-weight:500;font-variant-numeric:tabular-nums}
+.hb.ph b{color:var(--faint)}
+.ok{width:44px;height:44px;border-radius:12px;border:1px solid var(--line);background:none;display:grid;place-items:center}
+.ok svg{width:16px;height:16px;stroke:var(--faint);fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.ok[aria-pressed="true"]{background:var(--ok);border-color:var(--ok)}
+.ok[aria-pressed="true"] svg{stroke:var(--bg)}
+.set-more{display:flex;flex-wrap:wrap;gap:8px}
+.set-more .ghost{color:var(--muted)}
+.add-ex{min-height:44px;border-radius:12px;border:1px dashed var(--line);background:none;color:var(--yolk);font-size:14px;padding:8px 12px}
+
+/* weigh-ins */
+.wform{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:8px}
+.wform .f{display:flex;flex-direction:column;gap:4px;min-width:0}
+.wform input{width:100%}
+.wform input[type="date"]{direction:ltr}
+.wform .btn{grid-column:1/-1}
+.big{display:flex;align-items:baseline;gap:6px}
+.big b{font-size:56px;line-height:.95;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.big span{color:var(--muted)}
+.deltas{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--muted)}
+.deltas b{color:var(--fg);font-variant-numeric:tabular-nums}
+.deltas b.up{color:var(--ok)} .deltas b.down{color:var(--rare)}
+.chart{width:100%;height:auto;display:block}
+.wlist{display:flex;flex-direction:column}
+.wrow{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:10px;align-items:center;padding-block:8px;border-top:1px solid var(--line);font-variant-numeric:tabular-nums}
+.wweek+.wrow{border-top:0}
+.wweek{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:10px;align-items:baseline;margin-top:8px;padding:8px 10px;border-radius:10px;background:var(--raised);font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.wweek:first-child{margin-top:0}
+.wweek b{color:var(--fg);font-size:15px}
+.wweek .dl{min-width:36px;text-align:center}
+.bal{display:flex;flex-direction:column;gap:2px;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:var(--raised)}
+.bal b{font-size:16px}
+.bal span{font-size:13px;line-height:1.45;color:var(--muted)}
+.bal-ok{border-color:var(--ok)} .bal-ok b{color:var(--ok)}
+.bal-warn{border-color:var(--yolk)} .bal-warn b{color:var(--yolk)}
+.wrow .d{color:var(--muted);font-size:13px}
+.wrow .ghost{min-height:36px;padding:2px 10px;font-size:12px}
+.msg{font-size:13px;color:var(--muted)}
+.msg.err{color:var(--bad)}
+
+/* weekly */
+.tbl{overflow-x:auto;background:var(--surface);border-radius:var(--r)}
+.wk{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:13px}
+.wk th{font-size:11px;font-weight:500;color:var(--muted);padding:10px 4px 6px;text-align:center;white-space:nowrap}
+.wk td{padding:8px 4px;text-align:center;border-top:1px solid var(--line);vertical-align:middle;white-space:nowrap}
+.wk td:first-child,.wk th:first-child{padding-inline-start:10px}
+.wk td:last-child,.wk th:last-child{padding-inline-end:10px}
+.wk tr.is-today td{background:var(--raised)}
+.wk tfoot td{font-weight:700;border-top:2px solid var(--line)}
+.wk small{display:block;font-size:10px;color:var(--muted);font-weight:400}
+.dayb{background:none;border:0;display:inline-flex;align-items:baseline;gap:4px;min-height:36px;padding:2px 4px}
+.dayb b{font-size:15px;font-weight:700;line-height:1}
+.dayb span{font-size:11px;color:var(--muted)}
+.hd{display:inline-flex;gap:3px}
+.hd i{font-style:normal;width:16px;height:16px;border-radius:50%;border:1px solid var(--line);font-size:9px;line-height:14px;color:var(--faint)}
+.hd i.on{background:var(--ok);border-color:var(--ok);color:var(--bg);font-weight:700}
+.ins{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.ins li{position:relative;padding-inline-start:16px;font-size:14px;line-height:1.45}
+.ins li::before{content:"";position:absolute;inset-inline-start:0;top:.5em;width:8px;height:8px;border-radius:50%;background:var(--faint)}
+.ins li.ins-ok::before{background:var(--ok)}
+.ins li.ins-warn::before{background:var(--yolk)}
+.prog{display:flex;flex-direction:column}
+.prow{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding-block:7px;border-top:1px solid var(--line);font-size:13px}
+.prow:first-child{border-top:0}
+.prow span{min-width:0}
+.prow b{font-weight:500;white-space:nowrap;font-variant-numeric:tabular-nums;color:var(--muted)}
+.prow b.p-up{color:var(--ok)} .prow b.p-down{color:var(--rare)}
+.row-btns{display:flex;flex-wrap:wrap;gap:8px}
+.row-btns>*{flex:1 1 130px}
+details summary{cursor:pointer;color:var(--muted);font-size:13px;min-height:32px}
+details[open] summary{margin-bottom:8px}
+
+/* bottom tabs */
+.tabs{position:fixed;inset:auto 0 0 0;z-index:9;background:var(--surface);border-top:1px solid var(--line);
+  padding:6px max(16px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.tabs-in{max-width:560px;margin-inline:auto;display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.tab{display:flex;flex-direction:column;align-items:center;gap:2px;min-height:52px;padding:6px 2px;border:0;border-radius:12px;background:none;color:var(--muted);font-size:12px}
+.tab svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.tab.is-on{color:var(--yolk);background:var(--raised);font-weight:700}
+
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+</head>
+<body>
+<div id="app" dir="rtl" lang="he">
+  <header class="top">
+    <div class="brand">קיטו <span>וכוח</span></div>
+    <div class="top-side">
+      <button class="tchip" id="tchip" data-act="timer-stop" hidden aria-label="עצירת טיימר מנוחה"></button>
+      <span class="save" id="save" data-s="saved" role="status" aria-live="polite">נשמר ✓</span>
+    </div>
+  </header>
+  <main id="view"></main>
+  <nav class="tabs" aria-label="ניווט ראשי">
+    <div class="tabs-in">
+      <button class="tab" data-act="tab" data-v="daily"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14v17H5z"/><path d="M9 9h6M9 13h6M9 17h3"/></svg>יומן יומי</button>
+      <button class="tab" data-act="tab" data-v="weigh"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8.5 9.5a5 5 0 0 1 7 0M12 9v2.5"/></svg>מעקב משקל</button>
+      <button class="tab" data-act="tab" data-v="week"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M21 20H3"/></svg>סיכום שבועי</button>
+    </div>
+  </nav>
+</div>
+
+<script>
+(function(){
+'use strict';
+document.documentElement.setAttribute('dir','rtl');
+document.documentElement.setAttribute('lang','he');
+
+/* ---------- helpers ---------- */
+var $ = function(s,r){ return (r||document).querySelector(s); };
+var ESC = {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'};
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return ESC[c];}); }
+function pad(n){ return String(n).padStart(2,'0'); }
+function ymd(d){ return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
+function fromYmd(s){ var a=s.split('-').map(Number); return new Date(a[0],a[1]-1,a[2]); }
+function addDays(s,n){ var d=fromYmd(s); d.setDate(d.getDate()+n); return ymd(d); }
+function weekStart(s){ return addDays(s,-fromYmd(s).getDay()); }
+function todayStr(){ return ymd(new Date()); }
+function nowHM(){ var d=new Date(); return pad(d.getHours())+':'+pad(d.getMinutes()); }
+function clone(o){ return JSON.parse(JSON.stringify(o)); }
+function num(n){ return Math.round(n).toLocaleString('en-US'); }
+function trim(n){ return String(Math.round(n*100)/100); }
+function toNum(v){ if(v===''||v==null) return NaN; return parseFloat(String(v).replace(',','.')); }
+function isDate(s){ return /^\d{4}-\d{2}-\d{2}$/.test(s); }
+var HE_L=['א׳','ב׳','ג׳','ד׳','ה׳','ו׳','ש׳'];
+var HE_D=['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
+function dm(s){ var d=fromYmd(s); return d.getDate()+'.'+(d.getMonth()+1); }
+function longDate(s){ var d=fromYmd(s); var m; try{ m=d.toLocaleDateString('he-IL',{day:'numeric',month:'long'}); }catch(e){ m=dm(s); } return 'יום '+HE_D[d.getDay()]+' · '+m; }
+var CHECK='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+
+/* ---------- plan data ---------- */
+var TARGETS={ work:{k:2800,p:155}, rest:{k:2500,p:150} };
+var TYPES=[{id:'rest',label:'מנוחה'},{id:'A',label:'אימון A – עליון'},{id:'B',label:'אימון B – תחתון ובטן'},{id:'F',label:'אימון שישי – בית'}];
+var TYPE_SHORT={rest:'מנוחה',A:'A עליון',B:'B תחתון',F:'בית'};
+var HABITS=[{id:'salt',label:'מי מלח בבוקר (0.5 ל׳)',l:'מ'},{id:'mag',label:'מגנזיום בערב (2 טבליות / 200 מ״ג)',l:'ג'},{id:'creatine',label:'קריאטין (5 גרם)',l:'ק',opt:true}];
+/* Nutrition estimates: kcal (k) and protein grams (p). */
+var N={
+  scoop:{k:110,p:24}, cream:{k:135,p:1}, egg:{k:72,p:6.3}, butter:{k:125,p:0}, snack:{k:210,p:3},
+  sides:[
+    {id:'avocado',label:'חצי אבוקדו',k:160,p:2},
+    {id:'salad',label:'מלפפון וחצי עגבנייה בשמן זית',k:110,p:1},
+    {id:'mushrooms',label:'פטריות צרובות בצד',k:80,p:3}
+  ]
+};
+/* Food items logged by quantity.
+   Weighed items: g = default grams per unit (raw weight), kg / pg = kcal and protein per gram.
+   Counted items: k / p per unit. */
+var FOODS={
+  entrecote:{label:'סטייק אנטריקוט',g:300,kg:2.9,pg:0.18},
+  sinta:{label:'סטייק סינטה',g:250,kg:2.2,pg:0.2},
+  burger:{label:'המבורגר קצבים',g:220,kg:2.7,pg:0.17},
+  lambchop:{label:'צלע טלה',g:100,kg:2.1,pg:0.105,note:'משקל עם העצם'},
+  asado:{label:'אסאדו / שפונדרה',g:300,kg:2.7,pg:0.1,note:'משקל עם העצם'},
+  groundbeef:{label:'בקר טחון',g:350,kg:2.54,pg:0.17,note:'משקל נא, כ-20% שומן'},
+  groundpargit:{label:'פרגית קצוצה',g:350,kg:1.5,pg:0.19,note:'משקל נא'},
+  groundmix:{label:'בקר טחון + פטריות + פרמזן',g:350,kg:2.93,pg:0.195},
+  padkrapow:{label:'פאד קפאו קטוגני + ביצת עין',g:350,kg:2.67,pg:0.2},
+  pargitoil:{label:'סטייק פרגית בשמן זית',g:350,kg:1.84,pg:0.19},
+  seafoodbutter:{label:'שרימפס / פירות ים בחמאה',g:350,kg:1.41,pg:0.19},
+  grill:{label:'נתח על הגריל / המבורגר',g:400,kg:2.85,pg:0.18},
+  cheddar:{label:'פרוסת צ׳דר',k:85,p:5},
+  buche:{label:'פרוסת בושה',k:75,p:4.5},
+  hardcheese:{label:'גבינה קשה אחרת (20 גרם)',k:75,p:5},
+  parmesan:{label:'פרמזן מגורד (כף)',k:40,p:3.5},
+  friedegg:{label:'ביצת עין בחמאה',k:110,p:6.3},
+  bacon:{label:'רצועת רו בייקון',k:60,p:2.5},
+  pulledasado:{label:'אסאדו מפורק (100 גרם)',k:300,p:22},
+  tuna:{label:'פחית טונה קטנה בשמן זית',k:180,p:19},
+  avocado:{label:'חצי אבוקדו',k:160,p:2},
+  salad:{label:'סלט מלפפון-עגבנייה בשמן זית',k:110,p:1},
+  mushrooms:{label:'פטריות צרובות',k:80,p:3},
+  kapaosauce:{label:'רוטב פאד קפאו (דגים / סויה, שום, צ׳ילי, בזיליקום)',k:30,p:2},
+  garlic:{label:'שום (שן)',k:5,p:0.2},
+  onion:{label:'בצל',k:16,p:0.5},
+  jalapeno:{label:'חלפיניו',k:5,p:0},
+  butter:{label:'חמאה (כף)',k:108,p:0},
+  oliveoil:{label:'שמן זית (כף)',k:120,p:0},
+  pecan:{label:'פקאן (חצי אגוז)',k:10,p:0.15,cnt:true},
+  macadamia:{label:'מקדמיה',k:19,p:0.2,cnt:true},
+  brazil:{label:'אגוז ברזיל',k:33,p:0.7,cnt:true}
+};
+var SNACK_GROUPS=[{label:'אגוזים – לפי מספר',ids:['pecan','macadamia','brazil']}];
+var MEALS_ITEMS={lunch:1,dinner:1,snack:1};
+var LUNCH_GROUPS=[{label:'תוספת חלבון – רק כשמתחשק',ids:['bacon','pulledasado','cheddar','buche','hardcheese','tuna']}];
+var DINNER_GROUPS=[
+  {label:'נתחים על הגריל והמבורגרים',ids:['entrecote','sinta','burger','lambchop','asado']},
+  {label:'קצוץ ומוקפצים – בוחרים בסיס ומוסיפים תוספות',ids:['groundbeef','pargitoil','seafoodbutter']},
+  {label:'תוספות – פטריות, גבינות, רטבים ושומן',ids:['mushrooms','parmesan','cheddar','buche','hardcheese','kapaosauce','friedegg','garlic','onion','jalapeno','butter','oliveoil','bacon','avocado','salad']}
+];
+/* Entries saved before items had quantities. */
+var OLD_ADDON={bacon:{id:'bacon',q:3},asado:{id:'pulledasado',q:1},cheese:{id:'hardcheese',q:2},tuna:{id:'tuna',q:1}};
+var OLD_DINNER={grill:'grill',ground:'groundmix',padkrapow:'padkrapow',pargit:'pargitoil',seafood:'seafoodbutter'};
+function byId(list,id){ for(var i=0;i<list.length;i++) if(list[i].id===id) return list[i]; return null; }
+var YT='https://www.youtube.com/watch?v=';
+var WORKOUTS={
+  A:{title:'אימון A – פלג גוף עליון',ex:[
+    {id:'bench',he:'לחיצת חזה בשכיבה במוט',en:'Bench Press',sets:3,reps:'8–10',kind:'barbell',yt:'hWbUlkb5Ms4'},
+    {id:'lat',he:'משיכת פולי עליון לחזה',en:'Lat Pulldown',sets:3,reps:'8–10',kind:'pin',yt:'bNmvKpJSWKM'},
+    {id:'row',he:'חתירה בישיבה בכבל',en:'Seated Cable Row',sets:3,reps:'8–10',kind:'pin',yt:'qD1WZ5pSuvk'},
+    {id:'shoulder',he:'לחיצת כתפיים במכונה',en:'Machine Shoulder Press',sets:2,reps:'8–10',kind:'pin',yt:'6v4nrRVySj0'},
+    {id:'lateral',he:'הרחקת כתפיים במשקולות יד',en:'Dumbbell Lateral Raise',sets:2,reps:'12–15',kind:'dumbbell',yt:'Kl3LEzQ5Zqs'},
+    {id:'facepull',he:'פייס-פול בכבל עם חבל',en:'Cable Face Pull',sets:2,reps:'12–15',kind:'pin',yt:'7z65m-qWJrA',from:'2026-11-23'},
+    {id:'preacher',he:'כפיפת מרפקים במכונת פריצ׳ר',en:'Machine Preacher Curl',sets:3,reps:'10–12',kind:'pin',yt:'S4dDLfp3e8w'},
+    {id:'pushdown',he:'פשיטת מרפקים בחבל',en:'Rope Triceps Pushdown',sets:3,reps:'10–12',kind:'pin',yt:'1FjkhpZsaxc'}
+  ]},
+  B:{title:'אימון B – פלג גוף תחתון ובטן',ex:[
+    {id:'legpress',he:'לחיצת רגליים במכונה',en:'Leg Press',sets:3,reps:'8–10',kind:'plate',yt:'nDh_BlnLCGc'},
+    {id:'calf',he:'לחיצת תאומים ב-Leg Press',en:'',sets:3,reps:'12–15',kind:'plate',yt:'-pktcXXJo7A'},
+    {id:'rdl',he:'דדליפט רומני במשקולות יד',en:'Dumbbell Romanian Deadlift',sets:3,reps:'8–12',kind:'dumbbell',yt:'aa57T45iFSE'},
+    {id:'legext',he:'פשיטת ברכיים במכונה',en:'Leg Extension',sets:3,reps:'10–12',kind:'pin',yt:'iQ92TuvBqRo'},
+    {id:'legcurl',he:'כפיפת ברכיים בישיבה',en:'Seated Leg Curl',sets:4,reps:'10–12',kind:'pin',yt:'xdbEG3xGLI8'},
+    {id:'plank',he:'פלאנק סטטי על האמות',en:'Forearm Plank',sets:3,reps:'60 שנ׳',kind:'time',yt:'xe2MXatLTUw'}
+  ]},
+  F:{title:'אימון שישי – בית (15–20 דק׳)',ex:[
+    {id:'extrot',he:'פתיחת כתף בשכיבה על הצד (1.5 ק״ג)',en:'',sets:3,reps:'12–15 לכל יד',kind:'dumbbell',defW:'1.5',yt:'dIpVOai4pBM'},
+    {id:'deadbug',he:'דד-באג',en:'Dead Bug',sets:3,reps:'10 לכל צד',kind:'body',yt:'GbSC02oU3To'},
+    {id:'crunch',he:'כפיפות בטן איטיות עם משקולת (3 ק״ג)',en:'',sets:3,reps:'12–15',kind:'dumbbell',defW:'3',yt:'G9XfQJPBJVI'},
+    {id:'sideplank',he:'פלאנק צידי',en:'Side Plank',sets:3,reps:'30–45 שנ׳ לכל צד',kind:'time',yt:'BFOyHDlY2UE'}
+  ]}
+};
+var INCLINE={
+  bb:{id:'incline_bb',he:'בנצ׳ פרס בשיפוע חיובי – מוט',en:'Incline Barbell Bench Press',sets:3,reps:'8–10',kind:'barbell',yt:'98HWfiRonkE',incline:true},
+  db:{id:'incline_db',he:'בנצ׳ פרס בשיפוע חיובי – משקולות יד',en:'Incline Dumbbell Press',sets:3,reps:'8–10',kind:'dumbbell',yt:'8fXfwG4ftaQ',incline:true}
+};
+var KIND_NOTE={
+  barbell:'משקל כולל: מוט + פלטות משני הצדדים',
+  dumbbell:'משקל משקולת אחת (יד אחת)',
+  plate:'סך הפלטות שהועמסו, בלי המזחלת',
+  pin:'מספר הפין במכונה',
+  time:'שניות לסט',
+  body:'משקל גוף'
+};
+var EX_BY_ID={};
+['A','B','F'].forEach(function(k){ WORKOUTS[k].ex.forEach(function(e){ EX_BY_ID[e.id]=e; }); });
+EX_BY_ID.incline_bb=INCLINE.bb; EX_BY_ID.incline_db=INCLINE.db;
+var BASE_KG=82.0;
+var MAX_SETS=8;
+
+/* ---------- state ---------- */
+var LS_KEY='keto-strength-tracker-v1';
+var days={}, meta={t:0,weights:{},ex:{}}, dirty={}, seq=0;
+var ui={tab:'daily',date:todayStr(),wDate:null,delW:null,pendingImport:null,bkMsg:'',bkErr:false,bkText:''};
+var pendingRender=false;
+
+function blankDay(){
+  return {t:0,type:null,habits:{salt:false,mag:false,creatine:false},
+    shake:{scoops:null,cream:false,time:''},
+    lunch:{eggs:null,items:{},addons:[],side:null,time:''},
+    dinner:{items:{},preset:null,grams:null,time:''},
+    snack:{on:false,items:{},time:''},
+    notes:'',workout:{incline:false,ex:{}}};
+}
+function normItems(o){
+  if(!o||typeof o!=='object'||Array.isArray(o)) return {};
+  Object.keys(o).forEach(function(id){
+    var f=FOODS[id], it=o[id], q=it&&typeof it==='object'?Number(it.q):NaN;
+    if(!f||!(q>0)){ delete o[id]; return; }
+    it.q=Math.min(50,q);
+    if(f.kg!=null){ var g=Number(it.g); it.g=it.g==null||isNaN(g)?f.g:Math.max(0,Math.min(3000,g)); } else delete it.g;
+  });
+  return o;
+}
+function norm(d){
+  var b=blankDay(), k, j;
+  if(!d||typeof d!=='object'||Array.isArray(d)) return b;
+  for(k in b){
+    if(d[k]==null){ d[k]=b[k]; continue; }
+    if(b[k]&&typeof b[k]==='object'&&!Array.isArray(b[k])){
+      if(typeof d[k]!=='object'||Array.isArray(d[k])){ d[k]=b[k]; continue; }
+      for(j in b[k]) if(d[k][j]===undefined) d[k][j]=b[k][j];
+    }
+  }
+  if(!Array.isArray(d.lunch.addons)) d.lunch.addons=[];
+  d.lunch.items=normItems(d.lunch.items); d.dinner.items=normItems(d.dinner.items); d.snack.items=normItems(d.snack.items);
+  if(d.lunch.addons.length){
+    d.lunch.addons.forEach(function(a){ var m=OLD_ADDON[a]; if(m&&!d.lunch.items[m.id]) d.lunch.items[m.id]={q:m.q}; });
+    d.lunch.addons=[];
+  }
+  if(d.dinner.preset){
+    var oid=OLD_DINNER[d.dinner.preset];
+    if(oid&&!d.dinner.items[oid]) d.dinner.items[oid]={q:1,g:d.dinner.grams==null?FOODS[oid].g:Math.max(0,Number(d.dinner.grams)||0)};
+    d.dinner.preset=null; d.dinner.grams=null;
+  }
+  if(!d.workout.ex||typeof d.workout.ex!=='object') d.workout.ex={};
+  if(typeof d.notes!=='string') d.notes='';
+  if(typeof d.t!=='number') d.t=0;
+  return d;
+}
+function normMeta(m){
+  if(!m||typeof m!=='object') m={};
+  if(typeof m.t!=='number') m.t=0;
+  if(!m.weights||typeof m.weights!=='object') m.weights={};
+  if(!m.ex||typeof m.ex!=='object') m.ex={};
+  Object.keys(m.weights).forEach(function(k){ var v=toNum(m.weights[k]); if(!isDate(k)||!(v>0)) delete m.weights[k]; else m.weights[k]=v; });
+  return m;
+}
+function viewDay(date){ return days[date]?norm(days[date]):blankDay(); }
+function mutate(date,fn){
+  if(!days[date]) days[date]=blankDay();
+  var d=norm(days[date]); fn(d); d.t=Date.now(); dirty['d_'+date]=++seq; scheduleSave(); return d;
+}
+function touchMeta(){ meta.t=Date.now(); dirty.meta=++seq; scheduleSave(); }
+
+/* ---------- nutrition and day logic ---------- */
+function isWork(t){ return t==='A'||t==='B'||t==='F'; }
+function targets(t){ return t==='rest'?TARGETS.rest:isWork(t)?TARGETS.work:null; }
+function hasItems(o){ for(var k in o){ if(FOODS[k]&&Number(o[k]&&o[k].q)>0) return true; } return false; }
+function mealLogged(d,m){
+  if(m==='shake') return !!(d.shake.scoops||d.shake.cream);
+  if(m==='lunch') return !!(d.lunch.eggs||hasItems(d.lunch.items)||d.lunch.side);
+  if(m==='dinner') return hasItems(d.dinner.items);
+  return !!d.snack.on||hasItems(d.snack.items);
+}
+function foodTotals(f,it){
+  var q=Number(it&&it.q)||0; if(!f||q<=0) return {k:0,p:0};
+  if(f.kg!=null){ var g=it.g==null?f.g:Number(it.g)||0; return {k:q*g*f.kg,p:q*g*f.pg}; }
+  return {k:q*f.k,p:q*f.p};
+}
+function addItems(o,r){ for(var id in o){ var x=foodTotals(FOODS[id],o[id]); r.k+=x.k; r.p+=x.p; } }
+function totals(d){
+  var r={shake:{k:0,p:0},lunch:{k:0,p:0},dinner:{k:0,p:0},snack:{k:0,p:0}};
+  var s=Number(d.shake.scoops)||0;
+  if(s){ r.shake.k+=N.scoop.k*s; r.shake.p+=N.scoop.p*s; }
+  if(d.shake.cream){ r.shake.k+=N.cream.k; r.shake.p+=N.cream.p; }
+  var e=Number(d.lunch.eggs)||0;
+  if(e){ r.lunch.k+=e*N.egg.k+N.butter.k; r.lunch.p+=e*N.egg.p; }
+  addItems(d.lunch.items,r.lunch);
+  var sd=byId(N.sides,d.lunch.side); if(sd){ r.lunch.k+=sd.k; r.lunch.p+=sd.p; }
+  addItems(d.dinner.items,r.dinner);
+  if(d.snack.on){ r.snack.k+=N.snack.k; r.snack.p+=N.snack.p; }
+  addItems(d.snack.items,r.snack);
+  r.k=r.shake.k+r.lunch.k+r.dinner.k+r.snack.k;
+  r.p=r.shake.p+r.lunch.p+r.dinner.p+r.snack.p;
+  return r;
+}
+function hm2min(t){ if(!/^\d{1,2}:\d{2}$/.test(t||'')) return null; var a=t.split(':'); return (+a[0])*60+(+a[1]); }
+function eatWindow(d){
+  var ts=[];
+  ['shake','lunch','dinner','snack'].forEach(function(m){ if(mealLogged(d,m)){ var v=hm2min(d[m].time); if(v!=null) ts.push({v:v,t:d[m].time}); } });
+  if(!ts.length) return null;
+  ts.sort(function(a,b){return a.v-b.v;});
+  var a=ts[0], b=ts[ts.length-1];
+  return {from:a.t,to:ts.length>1?b.t:null,mins:ts.length>1?b.v-a.v:null};
+}
+function durShort(m){ m=Math.round(m); return '<bdi dir="ltr">'+Math.floor(m/60)+':'+pad(m%60)+'</bdi> שע׳'; }
+function durTxt(m){ var h=Math.floor(m/60), r=Math.round(m%60); return h+' שע׳'+(r?' '+r+' דק׳':''); }
+function winHtml(d){
+  var w=eatWindow(d);
+  if(!w) return '<span class="faint">—</span>';
+  if(w.to==null) return '<bdi dir="ltr">'+esc(w.from)+' –</bdi>';
+  return '<bdi dir="ltr">'+esc(w.from)+' – '+esc(w.to)+'</bdi> <span class="win-d">('+durTxt(w.mins)+')</span>';
+}
+function mtTxt(x){ return x.k>0?'<bdi dir="ltr">'+num(x.k)+'</bdi> קק״ל · <bdi dir="ltr">'+num(x.p)+'</bdi> ג׳ חלבון':''; }
+function setLogged(s){ return !!s && s.r!=='' && s.r!=null; }
+function inclineVar(d){
+  var v=d.workout.incline;
+  if(v!=='bb'&&v!=='db') v=meta.ex.incline&&meta.ex.incline.variant;
+  return v==='db'?'db':'bb';
+}
+/* An exercise added to the plan later (from) is not expected on earlier days unless it was logged there. */
+function exList(d,date){
+  var w=WORKOUTS[d.type]; if(!w) return [];
+  var out=[];
+  w.ex.forEach(function(e){
+    if(e.from&&date&&date<e.from&&!d.workout.ex[e.id]) return;
+    out.push(e); if(e.id==='bench') out.push(INCLINE[inclineVar(d)]);
+  });
+  return out;
+}
+/* Rows shown for an exercise: the planned sets, plus any extra sets added or logged that day. */
+function rowsFor(ex,rec){
+  var n=rec&&Array.isArray(rec.sets)?rec.sets.length:0;
+  return Math.max(ex.sets,Math.min(MAX_SETS,n));
+}
+function setCount(d,date){
+  var list=exList(d,date), done=0, total=0;
+  list.forEach(function(e){
+    var r=d.workout.ex[e.id], n=0;
+    if(r&&Array.isArray(r.sets)) r.sets.forEach(function(s){ if(setLogged(s)) n++; });
+    done+=n; total+=Math.max(e.sets,n);
+  });
+  return {done:done,total:total};
+}
+function hasActivity(d){
+  if(!d) return false; d=norm(d);
+  if(d.type||d.notes) return true;
+  if(d.habits.salt||d.habits.mag||d.habits.creatine) return true;
+  if(mealLogged(d,'shake')||mealLogged(d,'lunch')||mealLogged(d,'dinner')||mealLogged(d,'snack')) return true;
+  for(var k in d.workout.ex){ var r=d.workout.ex[k]; if(r&&Array.isArray(r.sets)&&r.sets.some(setLogged)) return true; }
+  return false;
+}
+
+/* ---------- workout helpers ---------- */
+function defUnit(ex){ return ex.kind==='pin'?'lb':'kg'; }
+function exUnit(ex,d){ var r=d.workout.ex[ex.id]; return (r&&r.u)||(meta.ex[ex.id]&&meta.ex[ex.id].u)||defUnit(ex); }
+function exBar(ex,d){ var r=d.workout.ex[ex.id]; var b=(r&&r.bar)||(meta.ex[ex.id]&&meta.ex[ex.id].bar)||20; return b===15?15:20; }
+function uLabel(u){ return u==='lb'?'<bdi dir="ltr">lbs</bdi>':'ק״ג'; }
+function conv(w,from,to){
+  var n=toNum(w); if(isNaN(n)||from===to) return w;
+  return to==='lb'?String(Math.round(n*2.20462)):String(Math.round(n*0.453592*2)/2);
+}
+function lastSession(exId,date){
+  var keys=Object.keys(days).sort();
+  for(var i=keys.length-1;i>=0;i--){
+    var k=keys[i]; if(k>=date) continue;
+    var w=days[k]&&days[k].workout, r=w&&w.ex&&w.ex[exId];
+    if(r&&Array.isArray(r.sets)&&r.sets.some(setLogged)) return {date:k,u:r.u,sets:r.sets};
+  }
+  return null;
+}
+function placeholders(ex,unit,last,i){
+  var w='', r='';
+  if(last){
+    var s=last.sets[i]; if(!setLogged(s)){ for(var j=last.sets.length-1;j>=0;j--){ if(setLogged(last.sets[j])){ s=last.sets[j]; break; } } }
+    if(s){ r=String(s.r); w=(s.w===''||s.w==null)?'':conv(String(s.w),last.u||defUnit(ex),unit); }
+  }
+  if(w===''&&ex.defW&&unit==='kg') w=ex.defW;
+  return {w:w,r:r};
+}
+function needsW(ex){ return ex.kind!=='time'&&ex.kind!=='body'; }
+function hintFor(ex,unit,bar,wv){
+  var w=toNum(wv); if(isNaN(w)) return null;
+  if(ex.kind==='barbell'){
+    var b=unit==='lb'?Math.round(bar*2.20462):bar, side=(w-b)/2;
+    if(side<0) return null;
+    return {l:'כל צד',v:trim(side)+' '+uLabel(unit)};
+  }
+  if(ex.kind==='plate') return {l:'כל צד',v:trim(w/2)+' '+uLabel(unit)};
+  if(unit==='lb') return {l:'',v:'≈ '+(Math.round(w*0.453592*10)/10)+' ק״ג'};
+  if(ex.kind==='pin') return {l:'',v:'≈ '+Math.round(w*2.20462)+' <bdi dir="ltr">lbs</bdi>'};
+  return null;
+}
+function hintHtml(ex,unit,bar,val,ph){
+  var h=hintFor(ex,unit,bar,val), isPh=false;
+  if(!h&&(val===''||val==null)&&ph!==''){ h=hintFor(ex,unit,bar,ph); isPh=true; }
+  if(!h) return {html:'',ph:false};
+  return {html:(h.l?h.l+' ':'')+'<b>'+h.v+'</b>',ph:isPh};
+}
+function ensureRec(d,ex,min){
+  var r=d.workout.ex[ex.id], need=Math.max(ex.sets,Math.min(MAX_SETS,min||0));
+  if(!r||typeof r!=='object'){ r=d.workout.ex[ex.id]={u:exUnit(ex,d),sets:[]}; if(ex.kind==='barbell') r.bar=exBar(ex,d); }
+  if(!Array.isArray(r.sets)) r.sets=[];
+  while(r.sets.length<need) r.sets.push({w:'',r:''});
+  for(var i=0;i<r.sets.length;i++){ if(!r.sets[i]||typeof r.sets[i]!=='object') r.sets[i]={w:'',r:''}; }
+  return r;
+}
+
+/* ---------- rendering: shared ---------- */
+function chev(dir){ return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="'+(dir==='r'?'M9 5l7 7-7 7':'M15 5l-7 7 7 7')+'"/></svg>'; }
+function navHtml(){
+  var ws=weekStart(ui.date), today=todayStr(), h='';
+  h+='<div class="nav"><button class="ico" data-act="week" data-v="-7" aria-label="שבוע קודם">'+chev('r')+'</button>';
+  h+='<div class="nav-t"><h2>'+esc(longDate(ui.date))+'</h2>'+(ui.date!==today?'<button data-act="today">חזרה להיום</button>':'')+'</div>';
+  h+='<button class="ico" data-act="week" data-v="7" aria-label="שבוע הבא">'+chev('l')+'</button></div>';
+  h+='<div class="week">';
+  for(var i=0;i<7;i++){
+    var ds=addDays(ws,i), sel=ds===ui.date;
+    h+='<button class="wd'+(sel?' is-sel':'')+(ds===today?' is-today':'')+'" data-act="date" data-v="'+ds+'" aria-pressed="'+sel+'" aria-label="יום '+HE_D[i]+' '+dm(ds)+'">'
+      +'<span class="wd-l">'+HE_L[i]+'</span><span class="wd-n">'+fromYmd(ds).getDate()+'</span><span class="dot'+(hasActivity(days[ds])?' on':'')+'" data-dot="'+ds+'"></span></button>';
+  }
+  return h+'</div>';
+}
+function chip(act,v,label,on,extra){
+  return '<button class="chip'+(extra&&extra.cls?' '+extra.cls:'')+'" data-act="'+act+'" data-v="'+esc(v)+'" aria-pressed="'+(!!on)+'">'+label+'</button>';
+}
+
+/* ---------- rendering: daily ---------- */
+function meterHtml(id,label,val,target,cls,unit){
+  var pct=target?Math.min(100,val/target*100):0;
+  return '<div class="meter"><div class="meter-h"><span class="lbl">'+label+'</span><span class="meter-n"><bdi dir="ltr"><b id="s-'+id+'">'+num(val)+'</b> <i id="s-'+id+'-t">'+(target?'/ '+num(target):'')+'</i></bdi>'+(unit?'<small>'+unit+'</small>':'')+'</span></div>'
+    +'<div class="track"><div class="fill '+cls+'" id="s-'+id+'-f" style="width:'+pct+'%"></div></div></div>';
+}
+function summaryHtml(d){
+  var t=totals(d), tg=targets(d.type);
+  return '<section class="sum" aria-label="סיכום יומי">'
+    +meterHtml('kcal','קלוריות',t.k,tg&&tg.k,'k','קק״ל')
+    +meterHtml('prot','חלבון',t.p,tg&&tg.p,'p','גרם')
+    +'<div class="win"><span class="lbl">חלון אכילה</span><span class="win-v" id="s-win">'+winHtml(d)+'</span></div></section>';
+}
+function typeChips(d){
+  return '<div class="seg4">'+TYPES.map(function(t){ return chip('type',t.id,t.label,d.type===t.id); }).join('')+'</div>';
+}
+function typeHtml(d){
+  return '<section class="card" id="sec-type"><header class="card-h"><h3>סוג היום</h3>'
+    +(isWork(d.type)?'<button class="link" data-act="jump">למעקב האימון ↓</button>':'<span class="hint">קובע את היעד היומי</span>')
+    +'</header>'+typeChips(d)+'</section>';
+}
+function habitsHtml(d){
+  return '<section class="card"><header class="card-h"><h3>הרגלים ותוספים</h3></header><div class="grp">'
+    +HABITS.map(function(h){
+      return '<button class="habit" data-act="habit" data-v="'+h.id+'" aria-pressed="'+(!!d.habits[h.id])+'"><span class="box">'+CHECK+'</span><span class="t">'+h.label+'</span>'+(h.opt?'<span class="tag">אופציונלי</span>':'')+'</button>';
+    }).join('')+'</div></section>';
+}
+function timeRow(m,d){
+  var v=d[m].time||'';
+  return '<div class="time-row"><label for="time-'+m+'">שעה</label><input type="time" id="time-'+m+'" data-in="time" data-meal="'+m+'" value="'+esc(v)+'">'
+    +'<button class="ghost" data-act="now" data-meal="'+m+'">עכשיו</button>'
+    +(v?'<button class="ghost" data-act="time-clear" data-meal="'+m+'" aria-label="ניקוי שעה">נקה</button>':'')+'</div>';
+}
+function mealCard(m,title,hint,body,d,t){
+  return '<section class="card" id="meal-'+m+'"><header class="card-h"><div><h3>'+title+'</h3><span class="hint">'+hint+'</span></div><span class="mt" id="mt-'+m+'">'+mtTxt(t[m])+'</span></header>'+body+timeRow(m,d)+'</section>';
+}
+function shakeHtml(d,t){
+  var body='<div class="grp"><span class="lbl">אבקת חלבון (איזולט)</span><div class="chips">'
+    +chip('scoops','1','1 סקופ',d.shake.scoops==1)+chip('scoops','1.5','1.5 סקופים',d.shake.scoops==1.5)+'</div></div>'
+    +'<div class="chips">'+chip('cream','1','שמנת מתוקה 38% (2–3 כפות)',d.shake.cream)+'</div>';
+  var hint='<bdi dir="ltr">~12:30</bdi>'+(d.type==='rest'?' · לא בתוכנית ביום מנוחה':'');
+  return mealCard('shake','שייק אחרי אימון',hint,body,d,t);
+}
+function foodSub(f,it){ var x=foodTotals(f,it); return '<bdi dir="ltr">'+num(x.k)+'</bdi> קק״ל · <bdi dir="ltr">'+num(x.p)+'</bdi> ג׳ חלבון'; }
+function stepper(act,attrs,val,label,id,input){
+  var mid=input?'<input type="number" id="'+id+'" '+input+' inputmode="numeric" min="0" max="50" step="1" value="'+val+'" aria-label="כמות, '+label+'">':'<b dir="ltr"'+(id?' id="'+id+'"':'')+'>'+val+'</b>';
+  return '<div class="stp"><button data-act="'+act+'" '+attrs+' data-d="-1" aria-label="פחות '+label+'">−</button>'+mid+'<button data-act="'+act+'" '+attrs+' data-d="1" aria-label="עוד '+label+'">+</button></div>';
+}
+function foodRow(meal,id,it){
+  var f=FOODS[id], w=f.kg!=null, key=meal+'-'+id;
+  return '<div class="frow"><span class="fname">'+f.label+'<small class="fsub" id="fk-'+key+'">'+foodSub(f,it)+'</small></span>'
+    +stepper('fq','data-meal="'+meal+'" data-v="'+id+'"',trim(Number(it.q)),f.label,f.cnt?'fq-'+key:'',f.cnt?'data-in="fqty" data-meal="'+meal+'" data-food="'+id+'"':'')
+    +(w?'<div class="fmeta"><input type="number" id="fg-'+key+'" data-in="fgrams" data-meal="'+meal+'" data-food="'+id+'" inputmode="numeric" min="0" step="10" value="'+esc(it.g==null?f.g:it.g)+'" aria-label="גרם ליחידה, '+f.label+'"><span>גרם ליחידה'+(f.note?' · '+f.note:'')+'</span></div>':'')
+    +'</div>';
+}
+function foodPicker(meal,groups,d){
+  var items=d[meal].items, h='';
+  var ids=Object.keys(items).filter(function(id){ return FOODS[id]&&Number(items[id].q)>0; });
+  if(ids.length) h+='<div class="grp">'+ids.map(function(id){ return foodRow(meal,id,items[id]); }).join('')+'</div>';
+  groups.forEach(function(g){
+    h+='<div class="grp"><span class="lbl">'+g.label+'</span><div class="chips">'+g.ids.map(function(id){
+      var q=items[id]?Number(items[id].q)||0:0;
+      return '<button class="chip" data-act="fadd" data-meal="'+meal+'" data-v="'+id+'" aria-pressed="'+(q>0)+'">'+FOODS[id].label+(q>0?' <bdi dir="ltr">×'+trim(q)+'</bdi>':'')+'</button>';
+    }).join('')+'</div></div>';
+  });
+  return h;
+}
+function lunchHtml(d,t){
+  var def=d.type==='rest'?5:isWork(d.type)?4:0, n=Number(d.lunch.eggs)||0;
+  var eggs=[3,4,5].map(function(k){
+    var sub=k===4?'יום אימון':k===5?'יום מנוחה':'&nbsp;';
+    return chip('eggs',k,k+'<small>'+sub+'</small>',n===k,{cls:k===def?'is-default':''});
+  }).join('');
+  var body='<div class="grp"><span class="lbl">ביצים בחמאה (15–20 גרם חמאה)</span><div class="eggs">'+eggs+'</div>'
+    +'<div class="eggstep"><span class="hint">כמות אחרת</span>'+stepper('eggq','',n,'ביצים')+'</div></div>'
+    +foodPicker('lunch',LUNCH_GROUPS,d)
+    +'<div class="grp"><span class="lbl">תוספת צד – אחת לכל היותר</span><div class="chips">'
+    +N.sides.map(function(s){ return chip('side',s.id,s.label,d.lunch.side===s.id); }).join('')+'</div></div>';
+  var hint=d.type==='rest'?'<bdi dir="ltr">~13:00</bdi>':isWork(d.type)?'<bdi dir="ltr">~13:45</bdi>':'<bdi dir="ltr">~13:45</bdi> באימון · <bdi dir="ltr">~13:00</bdi> במנוחה';
+  return mealCard('lunch','ארוחת צהריים',hint,body,d,t);
+}
+function dinnerHtml(d,t){
+  return mealCard('dinner','ארוחת ערב','<bdi dir="ltr">~20:00</bdi>',foodPicker('dinner',DINNER_GROUPS,d),d,t);
+}
+function snackHtml(d,t){
+  var body=foodPicker('snack',SNACK_GROUPS,d)
+    +(d.snack.on?'<div class="chips">'+chip('snack','1','אגוזים – רישום ישן בלי כמות (<bdi dir="ltr">210</bdi> קק״ל)',true)+'</div>':'');
+  return mealCard('snack','נשנוש גיבוי','רק ברעב אמיתי',body,d,t);
+}
+function notesHtml(d){
+  return '<section class="card"><header class="card-h"><h3><label for="notes">הערות יומיות</label></h3><span class="hint">עיכול · אנרגיה · שינה</span></header>'
+    +'<textarea id="notes" data-in="notes" rows="2" maxlength="600" placeholder="איך הרגשת היום?">'+esc(d.notes)+'</textarea></section>';
+}
+function exHtml(ex,d,date){
+  var unit=exUnit(ex,d), bar=exBar(ex,d), rec=d.workout.ex[ex.id], last=lastSession(ex.id,date), w=needsW(ex);
+  var h='<article class="ex" id="ex-'+ex.id+'"><div class="ex-h"><h4>'+ex.he+(ex.en?'<span class="en" dir="ltr">'+ex.en+'</span>':'')+'</h4>'
+    +'<a class="demo" href="'+YT+ex.yt+'" target="_blank" rel="noopener noreferrer">▶ הדגמה</a></div>';
+  var rm=/^([0-9–]+)(.*)$/.exec(ex.reps)||[null,ex.reps,''];
+  h+='<div class="ex-m"><span class="target"><bdi dir="ltr">'+ex.sets+' × '+rm[1]+'</bdi>'+rm[2]+'</span><span>'+KIND_NOTE[ex.kind]+'</span></div>';
+  var ctl='';
+  if(ex.incline){
+    var v=inclineVar(d);
+    ctl+='<div class="seg" role="group" aria-label="סוג הציוד"><button data-act="incline-var" data-v="bb" aria-pressed="'+(v==='bb')+'">מוט</button><button data-act="incline-var" data-v="db" aria-pressed="'+(v==='db')+'">משקולות יד</button></div>';
+  }
+  if(w){
+    ctl+='<div class="seg" role="group" aria-label="יחידת משקל"><button data-act="unit" data-ex="'+ex.id+'" data-v="kg" aria-pressed="'+(unit==='kg')+'">ק״ג</button><button data-act="unit" data-ex="'+ex.id+'" data-v="lb" aria-pressed="'+(unit==='lb')+'"><bdi dir="ltr">lbs</bdi></button></div>';
+  }
+  if(ex.kind==='barbell'){
+    ctl+='<div class="seg" role="group" aria-label="משקל המוט"><button data-act="bar" data-ex="'+ex.id+'" data-v="20" aria-pressed="'+(bar===20)+'">מוט 20 ק״ג</button><button data-act="bar" data-ex="'+ex.id+'" data-v="15" aria-pressed="'+(bar===15)+'">מוט 15 ק״ג</button></div>';
+  }
+  if(ctl) h+='<div class="ex-c">'+ctl+'</div>';
+  if(last){
+    var lu=last.u||defUnit(ex);
+    var parts=last.sets.filter(setLogged).map(function(s){ return (w&&s.w!==''&&s.w!=null?esc(s.w)+'×':'')+esc(s.r); }).join(' · ');
+    h+='<div class="last">פעם קודמת (<bdi dir="ltr">'+dm(last.date)+'</bdi>): <bdi dir="ltr">'+parts+'</bdi>'+(w?' '+uLabel(lu):ex.kind==='time'?' שנ׳':'')+'</div>';
+  }
+  var one=w?'':' one';
+  h+='<div class="sets"><div class="set-head'+one+'"><span>#</span>'+(w?'<span>משקל ('+uLabel(unit)+')</span>':'')+'<span>'+(ex.kind==='time'?'שניות':'חזרות')+'</span><span></span><span></span></div>';
+  var rows=rowsFor(ex,rec);
+  for(var i=0;i<rows;i++){
+    var s=(rec&&rec.sets&&rec.sets[i])||{w:'',r:''}, ph=placeholders(ex,unit,last,i);
+    var hint=w?hintHtml(ex,unit,bar,s.w,ph.w):{html:'',ph:false};
+    h+='<div class="set'+one+'"><span class="n">'+(i+1)+'</span>'
+      +(w?'<input type="number" id="w-'+ex.id+'-'+i+'" data-in="set" data-ex="'+ex.id+'" data-i="'+i+'" data-f="w" inputmode="decimal" step="0.5" min="0" value="'+esc(s.w)+'" placeholder="'+esc(ph.w||'0')+'" aria-label="משקל, סט '+(i+1)+'">':'')
+      +'<input type="number" id="r-'+ex.id+'-'+i+'" data-in="set" data-ex="'+ex.id+'" data-i="'+i+'" data-f="r" inputmode="numeric" step="1" min="0" value="'+esc(s.r)+'" placeholder="'+esc(ph.r||'0')+'" aria-label="'+(ex.kind==='time'?'שניות':'חזרות')+', סט '+(i+1)+'">'
+      +'<span class="hb'+(hint.ph?' ph':'')+'" id="h-'+ex.id+'-'+i+'">'+hint.html+'</span>'
+      +'<button class="ok" id="ok-'+ex.id+'-'+i+'" data-act="setok" data-ex="'+ex.id+'" data-i="'+i+'" aria-pressed="'+setLogged(s)+'" aria-label="סימון סט '+(i+1)+' כבוצע">'+CHECK+'</button></div>';
+  }
+  h+='</div><div class="set-more">'
+    +(rows<MAX_SETS?'<button class="ghost" data-act="set-add" data-ex="'+ex.id+'">+ סט נוסף</button>':'')
+    +(rows>ex.sets?'<button class="ghost" data-act="set-del" data-ex="'+ex.id+'">הסרת סט <bdi dir="ltr">'+rows+'</bdi></button>':'')+'</div>';
+  return h+'</article>';
+}
+function workoutHtml(d,date){
+  var h='<h2 class="sec-h" id="sec-workout">מעקב אימון</h2>';
+  if(!d.type) return h+'<section class="card"><span class="hint">בחירת סוג היום פותחת את רשימת התרגילים.</span>'+typeChips(d)+'</section>';
+  if(d.type==='rest') return h+'<section class="card"><span class="hint">יום מנוחה – אין אימון היום.</span></section>';
+  var w=WORKOUTS[d.type];
+  h+='<div class="timer" id="timer" role="group" aria-label="טיימר מנוחה"><span class="timer-n" id="timer-n" dir="ltr">0:00</span>'
+    +'<button data-act="timer" data-v="60">60 שנ׳</button><button data-act="timer" data-v="90">90 שנ׳</button><button data-act="timer" data-v="120">120 שנ׳</button>'
+    +'<button data-act="timer-stop" aria-label="עצירת הטיימר"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="5" width="14" height="14" rx="2"/></svg></button>'
+    +'<div class="track thin"><div class="fill k" id="timer-f"></div></div></div>';
+  h+='<p class="hint">'+w.title+'</p>';
+  exList(d,date).forEach(function(ex){
+    h+=exHtml(ex,d,date);
+  });
+  return h;
+}
+function dailyHtml(){
+  var d=viewDay(ui.date), t=totals(d);
+  return navHtml()+summaryHtml(d)+typeHtml(d)+habitsHtml(d)+shakeHtml(d,t)+lunchHtml(d,t)+dinnerHtml(d,t)+snackHtml(d,t)+notesHtml(d)+workoutHtml(d,ui.date);
+}
+function updateSummary(){
+  if(ui.tab!=='daily') return;
+  var d=viewDay(ui.date), t=totals(d), tg=targets(d.type), el;
+  if((el=$('#s-kcal'))) el.textContent=num(t.k);
+  if((el=$('#s-prot'))) el.textContent=num(t.p);
+  if((el=$('#s-kcal-f'))) el.style.width=(tg?Math.min(100,t.k/tg.k*100):0)+'%';
+  if((el=$('#s-prot-f'))) el.style.width=(tg?Math.min(100,t.p/tg.p*100):0)+'%';
+  if((el=$('#s-win'))) el.innerHTML=winHtml(d);
+  ['shake','lunch','dinner','snack'].forEach(function(m){ var x=$('#mt-'+m); if(x) x.innerHTML=mtTxt(t[m]); });
+  var dot=$('[data-dot="'+ui.date+'"]'); if(dot) dot.classList.toggle('on',hasActivity(d));
+}
+
+/* ---------- rendering: weigh-ins ---------- */
+function weighEntries(){ return Object.keys(meta.weights).filter(isDate).sort().map(function(k){ return {date:k,kg:Number(meta.weights[k])}; }); }
+function deltaTxt(x){ var r=Math.round(x*10)/10; return (r>0?'+':r<0?'−':'')+Math.abs(r).toFixed(1); }
+function deltaCls(x){ var r=Math.round(x*10)/10; return r>0?'up':r<0?'down':''; }
+/* Weekly averages: one weigh-in swings 1–2 kg with water, so the trend is read from the week's mean. */
+function weekAverages(upto){
+  var by={}, out=[];
+  weighEntries().forEach(function(e){ if(upto&&e.date>upto) return; var ws=weekStart(e.date); (by[ws]=by[ws]||[]).push(e); });
+  Object.keys(by).sort().forEach(function(ws){
+    var a=by[ws], sum=0, ts=0;
+    a.forEach(function(e){ sum+=e.kg; ts+=+fromYmd(e.date); });
+    out.push({ws:ws,avg:sum/a.length,n:a.length,t:ts/a.length,en:a});
+  });
+  return out;
+}
+function weeksApart(a,b){ return Math.round((fromYmd(b)-fromYmd(a))/864e5/7); }
+/* Balance = weekly average steady or rising slowly (about 0 to +0.3 kg a week).
+   A verdict (down / up) needs three weekly averages within four weeks, with the last two steps not pulling
+   in opposite directions; a single big week-to-week swing is only flagged for watching (wdown / wup). */
+function balance(upto){
+  var w=weekAverages(upto), cur=w[w.length-1], o={st:'none',cur:cur||null,prev:null,rate:null,diff:null,span:0,weeks:w};
+  if(!cur) return o;
+  var win=w.filter(function(x){ return weeksApart(x.ws,cur.ws)<=4; }), n=win.length;
+  if(n<2) return o;
+  var prev=win[n-2], r1=(cur.avg-prev.avg)/weeksApart(prev.ws,cur.ws);
+  o.prev=prev; o.diff=cur.avg-prev.avg; o.rate=r1; o.span=1;
+  if(n>=3){
+    var span=weeksApart(win[0].ws,cur.ws), trend=(cur.avg-win[0].avg)/span, dir=trend<-0.15?-1:trend>0.35?1:0, step2=prev.avg-win[n-3].avg;
+    if(dir&&r1*dir>0&&step2*dir>-0.1){ o.st=dir<0?'down':'up'; o.rate=trend; o.span=span; return o; }
+    if(!dir&&r1>=-0.3&&r1<=0.5){ o.st='ok'; o.rate=trend; o.span=span; return o; }
+  }
+  o.st=r1<-0.3?'wdown':r1>0.5?'wup':'ok';
+  return o;
+}
+function underTarget(ws){
+  var s=weekStats(ws); if(!s.tn) s=weekStats(addDays(ws,-7));
+  return !!s.tn&&(s.ak-s.tk)/s.tn<-0.07*(s.tk/s.tn);
+}
+function nWeigh(n){ return n===1?'שקילה אחת':'<bdi dir="ltr">'+n+'</bdi> שקילות'; }
+function balView(b,under){
+  var r=b.rate, amt=r==null?'':'<bdi dir="ltr">'+Math.abs(r).toFixed(1)+'</bdi> ק״ג', sw=b.diff==null?'':'<bdi dir="ltr">'+Math.abs(b.diff).toFixed(1)+'</bdi> ק״ג', over=' ב-<bdi dir="ltr">'+b.span+'</bdi> השבועות האחרונים';
+  switch(b.st){
+    case 'ok': return {lv:'ok',label:'מאוזן',text:b.span>1?'שינוי ממוצע של <bdi dir="ltr">'+signed(r,1)+'</bdi> ק״ג לשבוע'+over+'.':'שינוי של <bdi dir="ltr">'+signed(b.diff,1)+'</bdi> ק״ג מול השבוע הקודם.'};
+    case 'wdown': return {lv:'info',label:'במעקב',text:'ירידה של '+sw+' מול השבוע הקודם. שבוע בודד מושפע מנוזלים – הקלוריות נשארות, והמסקנה בשבוע הבא.'};
+    case 'wup': return {lv:'info',label:'במעקב',text:'עלייה של '+sw+' מול השבוע הקודם. שבוע בודד מושפע מנוזלים – הקלוריות נשארות, והמסקנה בשבוע הבא.'};
+    case 'down': return {lv:'warn',label:'יורד',text:'ירידה ממוצעת של '+amt+' לשבוע'+over+'. '+(under?'קודם כול להגיע ליעד הקלוריות הקיים.':'להוסיף כ-<bdi dir="ltr">150–200</bdi> קק״ל ליום.')};
+    case 'up': return {lv:'warn',label:'עולה מהר מדי',text:'עלייה ממוצעת של '+amt+' לשבוע'+over+'. להוריד כ-<bdi dir="ltr">150–200</bdi> קק״ל ליום.'};
+  }
+  return {lv:'info',label:'אין עדיין מגמה',text:b.cur?'ההשוואה מתחילה בשבוע השני של שקילות.':''};
+}
+function chartSvg(en,wk){
+  var W=340,H=190,L=36,R=14,T=16,B=26, i;
+  var vals=en.map(function(e){return e.kg;}).concat([BASE_KG]);
+  var lo=Math.min.apply(null,vals), hi=Math.max.apply(null,vals);
+  lo=Math.floor((lo-0.3)*2)/2; hi=Math.ceil((hi+0.3)*2)/2; if(hi-lo<1.5){ hi+=0.5; lo-=0.5; }
+  function y(v){ return T+(hi-v)/(hi-lo)*(H-T-B); }
+  var t0=en.length?+fromYmd(en[0].date):0, t1=en.length?+fromYmd(en[en.length-1].date):0;
+  function x(t){ return t1===t0?(L+W-R)/2:L+(t-t0)/(t1-t0)*(W-L-R); }
+  var s='<svg class="chart" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="גרף משקל: שקילות וממוצע שבועי" direction="ltr">';
+  s+='<defs><linearGradient id="wg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f0b23e" stop-opacity=".28"/><stop offset="1" stop-color="#f0b23e" stop-opacity="0"/></linearGradient></defs>';
+  for(i=0;i<=3;i++){
+    var v=lo+(hi-lo)*i/3, yy=y(v);
+    s+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+yy+'" y2="'+yy+'" style="stroke:var(--line)" stroke-width="1"/>';
+    s+='<text x="'+(L-6)+'" y="'+(yy+3.5)+'" text-anchor="end" font-size="10" style="fill:var(--muted)">'+v.toFixed(1)+'</text>';
+  }
+  var by=y(BASE_KG);
+  s+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+by+'" y2="'+by+'" style="stroke:var(--faint)" stroke-width="1.2" stroke-dasharray="4 4"/>';
+  if(en.length){
+    var pts=wk.map(function(w){ return [x(w.t),y(w.avg)]; });
+    if(pts.length>1){
+      var line=pts.map(function(p,j){ return (j?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1); }).join(' ');
+      s+='<path d="'+line+' L'+pts[pts.length-1][0].toFixed(1)+' '+(H-B)+' L'+pts[0][0].toFixed(1)+' '+(H-B)+' Z" fill="url(#wg)" stroke="none"/>';
+      s+='<path d="'+line+'" fill="none" style="stroke:var(--yolk)" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>';
+    }
+    en.forEach(function(e){ s+='<circle cx="'+x(+fromYmd(e.date)).toFixed(1)+'" cy="'+y(e.kg).toFixed(1)+'" r="2.6" style="fill:var(--muted)"/>'; });
+    pts.forEach(function(p,j){
+      var lastP=j===pts.length-1;
+      s+='<circle cx="'+p[0].toFixed(1)+'" cy="'+p[1].toFixed(1)+'" r="'+(lastP?4.5:3.2)+'" style="fill:'+(lastP?'var(--yolk)':'var(--bg)')+';stroke:var(--yolk)" stroke-width="2"/>';
+    });
+    var lp=pts[pts.length-1], anchor=lp[0]>W-R-30?'end':lp[0]<L+30?'start':'middle', ly=lp[1]-10<T?lp[1]+18:lp[1]-10;
+    s+='<text x="'+lp[0].toFixed(1)+'" y="'+ly.toFixed(1)+'" text-anchor="'+anchor+'" font-size="12" font-weight="700" style="fill:var(--fg)">'+wk[wk.length-1].avg.toFixed(1)+'</text>';
+    if(en.length===1) s+='<text x="'+x(t0).toFixed(1)+'" y="'+(H-8)+'" text-anchor="middle" font-size="10" style="fill:var(--muted)">'+dm(en[0].date)+'</text>';
+    else{
+      s+='<text x="'+L+'" y="'+(H-8)+'" text-anchor="start" font-size="10" style="fill:var(--muted)">'+dm(en[0].date)+'</text>';
+      s+='<text x="'+(W-R)+'" y="'+(H-8)+'" text-anchor="end" font-size="10" style="fill:var(--muted)">'+dm(en[en.length-1].date)+'</text>';
+    }
+  }
+  return s+'</svg>';
+}
+function defaultWDate(){ return ui.wDate||todayStr(); }
+function weighHtml(){
+  var en=weighEntries(), last=en[en.length-1], wd=defaultWDate(), b=balance(), wk=b.weeks, c=b.cur, i, j;
+  var h='<section class="card"><header class="card-h"><h3>שקילת בוקר</h3><span class="hint"><bdi dir="ltr">3</bdi> בקרים בשבוע ומעלה</span></header>'
+    +'<div class="wform"><div class="f"><label class="lbl" for="w-kg">משקל (ק״ג)</label><input type="number" id="w-kg" inputmode="decimal" step="0.1" min="30" max="250" placeholder="'+(meta.weights[wd]?Number(meta.weights[wd]).toFixed(1):BASE_KG.toFixed(1))+'"></div>'
+    +'<div class="f"><label class="lbl" for="w-date">תאריך</label><input type="date" id="w-date" value="'+wd+'"></div>'
+    +'<button class="btn" data-act="w-save">שמירת שקילה</button></div>'
+    +(ui.wMsg?'<p class="msg err">'+esc(ui.wMsg)+'</p>':'')+'</section>';
+  h+='<section class="card">';
+  if(c){
+    var v=balView(b,underTarget(c.ws));
+    h+='<div><div class="big"><b dir="ltr">'+c.avg.toFixed(1)+'</b><span>ק״ג</span></div><p class="hint">ממוצע שבוע <bdi dir="ltr">'+dm(c.ws)+' – '+dm(addDays(c.ws,6))+'</bdi> · '+nWeigh(c.n)+'</p></div>'
+      +'<div class="bal bal-'+v.lv+'" role="status"><b>'+v.label+'</b>'+(v.text?'<span>'+v.text+'</span>':'')+'</div>'
+      +'<div class="deltas">'+(b.prev?'<span>מול ממוצע השבוע הקודם: <b dir="ltr">'+deltaTxt(c.avg-b.prev.avg)+'</b> ק״ג</span>':'')
+      +'<span>שקילה אחרונה: <b dir="ltr">'+last.kg.toFixed(1)+'</b> ק״ג · <bdi dir="ltr">'+dm(last.date)+'</bdi></span></div>';
+  }else{
+    h+='<div class="big"><b dir="ltr" class="faint">'+BASE_KG.toFixed(1)+'</b><span>ק״ג · נקודת פתיחה</span></div><p class="msg">עדיין אין שקילות. השקילה הראשונה תופיע כאן ובגרף.</p>';
+  }
+  h+=chartSvg(en,wk)+'<p class="hint">נקודות: שקילות · קו: ממוצע שבועי · מקווקו: נקודת הפתיחה, <bdi dir="ltr">'+BASE_KG.toFixed(1)+'</bdi> ק״ג. איזון: ממוצע שבועי יציב עד עלייה של <bdi dir="ltr">0.3</bdi> ק״ג לשבוע.</p></section>';
+  if(en.length){
+    h+='<section class="card"><header class="card-h"><h3>שקילות לפי שבוע</h3></header><div class="wlist">';
+    for(i=wk.length-1;i>=0;i--){
+      var w=wk[i], p=wk[i-1];
+      h+='<div class="wweek"><span>שבוע <bdi dir="ltr">'+dm(w.ws)+' – '+dm(addDays(w.ws,6))+'</bdi></span><span>ממוצע <b dir="ltr">'+w.avg.toFixed(1)+'</b></span>'
+        +'<span class="dl" dir="ltr">'+(p?deltaTxt(w.avg-p.avg):'')+'</span></div>';
+      for(j=w.en.length-1;j>=0;j--){
+        var e=w.en[j], dt=fromYmd(e.date);
+        h+='<div class="wrow"><span class="d">יום '+HE_L[dt.getDay()]+' · <bdi dir="ltr">'+dt.getDate()+'.'+(dt.getMonth()+1)+'.'+dt.getFullYear()+'</bdi></span>'
+          +'<b dir="ltr">'+e.kg.toFixed(1)+'</b>'
+          +(ui.delW===e.date
+            ?'<span><button class="ghost" data-act="w-del-yes" data-v="'+e.date+'">מחק</button> <button class="ghost" data-act="w-del-no">בטל</button></span>'
+            :'<button class="ghost" data-act="w-del" data-v="'+e.date+'" aria-label="מחיקת שקילה">מחיקה</button>')+'</div>';
+      }
+    }
+    h+='</div></section>';
+  }
+  return h;
+}
+
+/* ---------- weekly insights ---------- */
+var PLAN_WEEK={A:2,B:2,F:1};
+var VEG=['avocado','salad','mushrooms'];
+var HABIT_SHORT={salt:'מי מלח',mag:'מגנזיום',creatine:'קריאטין'};
+function L(s){ return '<bdi dir="ltr">'+s+'</bdi>'; }
+function signed(x,dec){ var r=Number(Math.abs(x).toFixed(dec||0)); return (x>0&&r?'+':x<0&&r?'−':'')+(dec?r.toFixed(dec):num(r)); }
+function hasVeg(d){
+  if(d.lunch.side) return true;
+  return VEG.some(function(id){ return Number((d.lunch.items[id]||{}).q)>0||Number((d.dinner.items[id]||{}).q)>0; });
+}
+function firstDay(){
+  var k=Object.keys(days).filter(function(x){ return isDate(x)&&hasActivity(days[x]); }).sort();
+  return k[0]||null;
+}
+function weightAt(date){
+  var en=weighEntries().filter(function(e){ return e.date<=date; });
+  return en.length?en[en.length-1].kg:BASE_KG;
+}
+/* A day counts towards intake averages once it is over, or today once dinner is logged. */
+function weekStats(ws){
+  var today=todayStr(), first=firstDay();
+  var s={any:false,full:0,k:0,p:0,tn:0,ak:0,ap:0,tk:0,tp:0,lowK:0,hitP:0,wins:[],veg:0,hab:{},habN:{},sess:{A:0,B:0,F:0},done:0,total:0};
+  HABITS.forEach(function(h){ s.hab[h.id]=0; s.habN[h.id]=0; });
+  for(var i=0;i<7;i++){
+    var ds=addDays(ws,i); if(ds>today) break;
+    if(!first||ds<first) continue;
+    var d=viewDay(ds), t=totals(d), w=eatWindow(d), tg=targets(d.type), isToday=ds===today;
+    if(hasActivity(days[ds])) s.any=true;
+    HABITS.forEach(function(h){ if(d.habits[h.id]){ s.hab[h.id]++; s.habN[h.id]++; } else if(!isToday) s.habN[h.id]++; });
+    if(t.k>0&&(!isToday||mealLogged(d,'dinner'))){
+      s.full++; s.k+=t.k; s.p+=t.p; if(hasVeg(d)) s.veg++;
+      if(tg){ s.tn++; s.ak+=t.k; s.ap+=t.p; s.tk+=tg.k; s.tp+=tg.p; if(t.k<tg.k*0.9) s.lowK++; if(t.p>=tg.p*0.9) s.hitP++; }
+      if(w&&w.mins!=null) s.wins.push({ds:ds,mins:w.mins});
+    }
+    if(isWork(d.type)){ var c=setCount(d,ds); if(c.done>0){ s.sess[d.type]++; if(!isToday){ s.done+=c.done; s.total+=c.total; } } }
+  }
+  return s;
+}
+function recStat(ex,rec){
+  if(!ex||!rec||!Array.isArray(rec.sets)) return null;
+  var u=rec.u||defUnit(ex), top=null, raw=null, reps=0, n=0, minR=Infinity, rs=[];
+  rec.sets.forEach(function(st){
+    if(!setLogged(st)) return;
+    var r=toNum(st.r); if(isNaN(r)) return;
+    n++; reps+=r; rs.push(r); if(r<minR) minR=r;
+    if(needsW(ex)){ var w=toNum(st.w); if(!isNaN(w)){ var kg=u==='lb'?w*0.453592:w; if(top==null||kg>top){ top=kg; raw=w; } } }
+  });
+  return n?{u:u,top:top,raw:raw,reps:reps,n:n,minR:minR,rs:rs}:null;
+}
+/* Reps over the first k sets, so sessions with a different number of sets compare like for like. */
+function repsOver(st,k){ var t=0; for(var i=0;i<k&&i<st.rs.length;i++) t+=st.rs[i]; return t; }
+/* Sessions of one exercise up to a date, newest first. */
+function exHistory(exId,upto,n){
+  var keys=Object.keys(days).sort(), out=[], ex=EX_BY_ID[exId];
+  for(var i=keys.length-1;i>=0&&out.length<n;i--){
+    var k=keys[i]; if(!isDate(k)||k>upto) continue;
+    var w=days[k]&&days[k].workout, st=recStat(ex,w&&w.ex&&w.ex[exId]);
+    if(st){ st.date=k; out.push(st); }
+  }
+  return out;
+}
+function topRep(ex){ var m=String(ex.reps).match(/\d+/g); return m?Math.max.apply(null,m.map(Number)):null; }
+function wIn(st,u){ return trim(st.u===u?st.raw:(u==='lb'?Math.round(st.top*2.20462):Math.round(st.top*2)/2)); }
+function repWord(ex){ return ex.kind==='time'?'שניות':'חזרות'; }
+function exProgress(ws){
+  var we=addDays(ws,6), out={rows:[],up:0,cmp:0,ready:[],stalled:[],fresh:0}, order=[];
+  ['A','B','F'].forEach(function(k){ WORKOUTS[k].ex.forEach(function(e){ order.push(e); if(e.id==='bench'){ order.push(INCLINE.bb); order.push(INCLINE.db); } }); });
+  order.forEach(function(ex){
+    var hist=exHistory(ex.id,we,4), cur=hist[0];
+    if(!cur||cur.date<ws) return;
+    var base=null, j;
+    for(j=1;j<hist.length;j++){ if(hist[j].date<ws){ base=hist[j]; break; } }
+    if(!base&&hist.length>1) base=hist[hist.length-1];
+    var weighted=needsW(ex)&&cur.top!=null, row={name:ex.he,cls:'new',txt:'נקודת בסיס'};
+    if(!base){ out.fresh++; if(weighted) row.txt='נקודת בסיס · '+L(wIn(cur,cur.u))+' '+uLabel(cur.u); }
+    else{
+      out.cmp++;
+      var bw=needsW(ex)&&base.top!=null, dW=weighted&&bw?cur.top-base.top:0, kk=Math.min(cur.n,base.n), cr=repsOver(cur,kk), br=repsOver(base,kk);
+      if(dW>0.05){ row.cls='up'; row.txt='↑ '+L(wIn(base,cur.u)+' → '+wIn(cur,cur.u))+' '+uLabel(cur.u); }
+      else if(dW<-0.05){ row.cls='down'; row.txt='↓ '+L(wIn(base,cur.u)+' → '+wIn(cur,cur.u))+' '+uLabel(cur.u); }
+      else if(cr!==br){
+        row.cls=cr>br?'up':'down';
+        row.txt=(cr>br?'↑ ':'↓ ')+L(trim(br)+' → '+trim(cr))+' '+repWord(ex)+(weighted?' · '+L(wIn(cur,cur.u))+' '+uLabel(cur.u):'');
+      }
+      else{ row.cls='same'; row.txt='ללא שינוי'+(weighted?' · '+L(wIn(cur,cur.u))+' '+uLabel(cur.u):''); }
+      if(row.cls==='up') out.up++;
+    }
+    out.rows.push(row);
+    if(weighted&&!ex.defW){
+      var tr=topRep(ex);
+      if(tr&&cur.n>=ex.sets&&cur.minR>=tr) out.ready.push(ex.he);
+      else if(hist.length>=3&&hist[1].top!=null&&hist[2].top!=null&&Math.abs(cur.top-hist[1].top)<=0.05&&Math.abs(cur.top-hist[2].top)<=0.05&&repsOver(cur,Math.min(cur.n,hist[2].n))<=repsOver(hist[2],Math.min(cur.n,hist[2].n))) out.stalled.push(ex.he);
+    }
+  });
+  return out;
+}
+function insights(ws){
+  var s=weekStats(ws), p=weekStats(addDays(ws,-7)), today=todayStr(), we=addDays(ws,6);
+  var o={any:s.any,diet:[],weight:[],train:[],prog:null}, under=false;
+  function add(list,lv,h){ list.push({lv:lv,h:h}); }
+  /* diet */
+  if(s.tn){
+    var ak=s.ak/s.tn, tk=s.tk/s.tn, dk=ak-tk, kt='קלוריות: ממוצע '+L(num(ak))+' קק״ל ליום מול יעד '+L(num(tk))+'. ';
+    if(dk<-0.07*tk){ under=true; add(o.diet,'warn',kt+'חסרות בממוצע '+L(num(-dk))+' קק״ל ליום'+(s.lowK?'; ב-'+L(s.lowK)+' מתוך '+L(s.tn)+' ימים הצריכה הייתה מתחת ל-90% מהיעד':'')+'.'); }
+    else if(dk>0.1*tk) add(o.diet,'info',kt+'עודף ממוצע של '+L(num(dk))+' קק״ל ליום.');
+    else add(o.diet,'ok',kt+'בתוך טווח היעד.');
+    var ap=s.ap/s.tn, tp=s.tp/s.tn;
+    add(o.diet,ap>=0.9*tp?'ok':'warn','חלבון: ממוצע '+L(num(ap))+' ג׳ ליום מול יעד '+L(num(tp))+' ('+L((ap/weightAt(we)).toFixed(1))+' ג׳ לק״ג גוף). לפחות 90% מהיעד ב-'+L(s.hitP)+' מתוך '+L(s.tn)+' ימים.');
+  }else if(s.full){
+    add(o.diet,'info','קלוריות וחלבון: ממוצע '+L(num(s.k/s.full))+' קק״ל ו-'+L(num(s.p/s.full))+' ג׳ חלבון ליום. להשוואה ליעד צריך לסמן סוג יום (אימון / מנוחה).');
+  }
+  if(s.full>=3&&p.full>=3) add(o.diet,'info','מול השבוע הקודם, ממוצע ליום: קלוריות '+L(signed(s.k/s.full-p.k/p.full))+', חלבון '+L(signed(s.p/s.full-p.p/p.full))+' ג׳.');
+  if(s.wins.length){
+    var sum=0, within=0, lng=s.wins[0];
+    s.wins.forEach(function(x){ sum+=x.mins; if(x.mins<=480) within++; if(x.mins>lng.mins) lng=x; });
+    add(o.diet,within===s.wins.length?'ok':'warn','חלון אכילה: ממוצע '+durShort(sum/s.wins.length)+'; '+L(within)+' מתוך '+L(s.wins.length)+' ימים בתוך 8 שעות.'+(lng.mins>480?' הארוך ביותר: יום '+HE_D[fromYmd(lng.ds).getDay()]+', '+durShort(lng.mins)+'.':''));
+  }
+  var hp=[], hw=false;
+  HABITS.forEach(function(h){
+    var n=s.habN[h.id]; if(!n||(h.opt&&!s.hab[h.id])) return;
+    hp.push(HABIT_SHORT[h.id]+' '+L(s.hab[h.id]+'/'+n)); if(s.hab[h.id]/n<0.7) hw=true;
+  });
+  if(hp.length&&s.any) add(o.diet,hw?'warn':'ok','הרגלים: '+hp.join(' · ')+'.');
+  if(s.full) add(o.diet,s.veg===s.full?'ok':'info','ירק או אבוקדו: ב-'+L(s.veg)+' מתוך '+L(s.full)+' ימים.');
+  /* weight */
+  var bl=balance(we), bc=bl.cur;
+  if(bc&&bc.ws===ws){ var bv=balView(bl,under); add(o.weight,bv.lv,'ממוצע שבועי: '+L(bc.avg.toFixed(1))+' ק״ג ('+nWeigh(bc.n)+'). '+bv.label+(bv.text?' – '+bv.text:'.')); }
+  else if(s.any) add(o.weight,'info','לא נרשמה שקילה בשבוע הזה.');
+  /* training */
+  var nS=s.sess.A+s.sess.B+s.sess.F, past=we<today;
+  if(nS||(past&&s.any)) add(o.train,nS>=5?'ok':(past&&nS<4?'warn':'info'),'אימונים: '+L(nS)+' מתוך '+L(5)+' – '+L('A '+s.sess.A+'/'+PLAN_WEEK.A)+' · '+L('B '+s.sess.B+'/'+PLAN_WEEK.B)+' · בית '+L(s.sess.F+'/'+PLAN_WEEK.F)+'.');
+  if(s.total) add(o.train,s.done/s.total>=0.85?'ok':'warn','סטים: '+L(s.done+'/'+s.total)+' הושלמו ('+L(Math.round(s.done/s.total*100)+'%')+') באימונים שהסתיימו.');
+  var pr=exProgress(ws);
+  if(pr.cmp) add(o.train,pr.up*2>=pr.cmp?'ok':'info','התקדמות ב-'+L(pr.up)+' מתוך '+L(pr.cmp)+' תרגילים מול האימון הקודם.');
+  else if(pr.fresh) add(o.train,'info',L(pr.fresh)+' תרגילים נרשמו לראשונה – זו נקודת הבסיס להשוואה בשבוע הבא.');
+  if(pr.ready.length) add(o.train,'ok','כל הסטים בראש טווח החזרות – אפשר להעלות משקל: '+pr.ready.map(esc).join(', ')+'.');
+  if(pr.stalled.length) add(o.train,'warn','ללא התקדמות 3 אימונים ברצף: '+pr.stalled.map(esc).join(', ')+'. אפשר לנסות חזרה נוספת בסט הראשון, או להוריד כ-10% ולבנות מחדש.');
+  if(pr.rows.length) o.prog=pr.rows;
+  return o;
+}
+function insightsHtml(ws){
+  var o=insights(ws), h='<section class="card"><header class="card-h"><h3>תובנות השבוע</h3></header>';
+  function grp(title,list){ return list.length?'<div class="grp"><span class="lbl">'+title+'</span><ul class="ins">'+list.map(function(x){ return '<li class="ins-'+x.lv+'">'+x.h+'</li>'; }).join('')+'</ul></div>':''; }
+  var body=grp('תזונה',o.diet)+grp('משקל',o.weight)+grp('אימונים',o.train);
+  if(o.prog) body+='<div class="grp"><span class="lbl">לפי תרגיל, מול האימון הקודם</span><div class="prog">'+o.prog.map(function(r){ return '<div class="prow"><span>'+esc(r.name)+'</span><b class="p-'+r.cls+'">'+r.txt+'</b></div>'; }).join('')+'</div></div>';
+  if(!o.any||!body) return h+'<p class="msg">אין עדיין מספיק נתונים לשבוע הזה.</p></section>';
+  return h+body+'<p class="hint">ממוצעי התזונה כוללים ימים שהסתיימו; היום הנוכחי נכנס אחרי רישום ארוחת הערב.</p></section>';
+}
+
+/* ---------- rendering: weekly ---------- */
+function weekHtml(){
+  var ws=weekStart(ui.date), today=todayStr(), rows='', a={k:0,p:0,n:0,win:0,wn:0,work:0,salt:0,mag:0,creatine:0};
+  for(var i=0;i<7;i++){
+    var ds=addDays(ws,i), d=viewDay(ds), t=totals(d), w=eatWindow(d), wk='<span class="faint">—</span>';
+    if(d.type==='rest') wk='מנוחה';
+    else if(isWork(d.type)){ var c=setCount(d,ds); if(c.done>0) a.work++; wk=(c.done>0?'✓ ':'')+TYPE_SHORT[d.type]+'<small dir="ltr">'+c.done+'/'+c.total+'</small>'; }
+    if(t.k>0){ a.k+=t.k; a.p+=t.p; a.n++; }
+    if(w&&w.mins!=null){ a.win+=w.mins; a.wn++; }
+    HABITS.forEach(function(hb){ if(d.habits[hb.id]) a[hb.id]++; });
+    rows+='<tr class="'+(ds===today?'is-today':'')+'"><td><button class="dayb" data-act="goto" data-v="'+ds+'" aria-label="פתיחת יום '+HE_D[i]+'"><b>'+HE_L[i]+'</b><span dir="ltr">'+dm(ds)+'</span></button></td>'
+      +'<td>'+wk+'</td>'
+      +'<td dir="ltr">'+(t.k>0?num(t.k):'<span class="faint">—</span>')+'</td>'
+      +'<td dir="ltr">'+(t.k>0?num(t.p):'<span class="faint">—</span>')+'</td>'
+      +'<td>'+(w?(w.mins!=null?durShort(w.mins):'')+'<small dir="ltr">'+esc(w.from)+(w.to?'–'+esc(w.to):'')+'</small>':'<span class="faint">—</span>')+'</td>'
+      +'<td><span class="hd">'+HABITS.map(function(hb){ return '<i class="'+(d.habits[hb.id]?'on':'')+'">'+hb.l+'</i>'; }).join('')+'</span></td></tr>';
+  }
+  var h='<div class="nav"><button class="ico" data-act="week" data-v="-7" aria-label="שבוע קודם">'+chev('r')+'</button>'
+    +'<div class="nav-t"><h2>שבוע <bdi dir="ltr">'+dm(ws)+' – '+dm(addDays(ws,6))+'</bdi></h2>'+(weekStart(today)!==ws?'<button data-act="today">חזרה לשבוע הנוכחי</button>':'')+'</div>'
+    +'<button class="ico" data-act="week" data-v="7" aria-label="שבוע הבא">'+chev('l')+'</button></div>';
+  h+='<div class="tbl"><table class="wk"><thead><tr><th>יום</th><th>אימון</th><th>קק״ל</th><th>חלבון</th><th>חלון אכילה</th><th>הרגלים</th></tr></thead><tbody>'+rows+'</tbody>'
+    +'<tfoot><tr><td>ממוצע</td><td><bdi dir="ltr">'+a.work+'/5</bdi><small>אימונים</small></td>'
+    +'<td dir="ltr">'+(a.n?num(a.k/a.n):'—')+'</td><td dir="ltr">'+(a.n?num(a.p/a.n):'—')+'</td>'
+    +'<td>'+(a.wn?durShort(a.win/a.wn):'—')+'</td><td></td></tr></tfoot></table></div>';
+  h+='<p class="hint">הממוצעים מחושבים לפי ימים שנרשמו בהם ארוחות (<bdi dir="ltr">'+a.n+'</bdi>). הרגלים: מ – מי מלח <bdi dir="ltr">'+a.salt+'/7</bdi> · ג – מגנזיום <bdi dir="ltr">'+a.mag+'/7</bdi> · ק – קריאטין <bdi dir="ltr">'+a.creatine+'/7</bdi></p>';
+  h+=insightsHtml(ws);
+  h+='<section class="card"><header class="card-h"><h3>גיבוי</h3></header>'
+    +'<p class="hint" id="sync-note">'+syncNote()+'</p>'
+    +'<div class="row-btns"><button class="btn" data-act="export">ייצוא JSON</button><label class="btn alt" for="imp-file" tabindex="0" role="button">ייבוא JSON</label><button class="btn alt" data-act="copy">העתקת הגיבוי</button></div>'
+    +'<input type="file" id="imp-file" accept="application/json,.json" hidden>';
+  if(ui.pendingImport){
+    var n=Object.keys(ui.pendingImport.days).length, m=Object.keys(ui.pendingImport.meta.weights||{}).length;
+    h+='<p class="msg">בגיבוי <bdi dir="ltr">'+n+'</bdi> ימים ו-<bdi dir="ltr">'+m+'</bdi> שקילות. הייבוא יחליף את כל הנתונים הקיימים.</p>'
+      +'<div class="row-btns"><button class="btn" data-act="import-yes">החלפת הנתונים</button><button class="btn alt" data-act="import-no">ביטול</button></div>';
+  }
+  if(ui.bkMsg) h+='<p class="msg'+(ui.bkErr?' err':'')+'" role="status">'+esc(ui.bkMsg)+'</p>';
+  if(ui.bkText) h+='<textarea id="bk-text" rows="5" readonly dir="ltr" aria-label="תוכן הגיבוי">'+esc(ui.bkText)+'</textarea>';
+  h+='<details><summary>ייבוא מטקסט מודבק</summary><textarea id="imp-text" rows="4" dir="ltr" placeholder="{ ... }" aria-label="הדבקת גיבוי JSON"></textarea><div class="row-btns" style="margin-top:8px"><button class="btn alt" data-act="import-text">טעינת הטקסט</button></div></details>'
+    +'</section>';
+  return h;
+}
+function syncNote(){ return cloudReady?'הנתונים נשמרים בחשבון שלך ומסתנכרנים בין המכשירים.':'הנתונים נשמרים בדפדפן של המכשיר הזה.'; }
+
+/* ---------- render ---------- */
+function focusKey(el){
+  if(!el||el===document.body||!el.closest||!el.closest('#app')) return null;
+  if(el.id) return '#'+(window.CSS&&CSS.escape?CSS.escape(el.id):el.id);
+  if(!el.dataset||!el.dataset.act) return null;
+  var s='[data-act="'+el.dataset.act+'"]';
+  ['v','meal','ex','i','d'].forEach(function(k){ if(el.dataset[k]!=null) s+='[data-'+k+'="'+el.dataset[k]+'"]'; });
+  return s;
+}
+function render(){
+  var fk=focusKey(document.activeElement), v=$('#view');
+  v.innerHTML=ui.tab==='daily'?dailyHtml():ui.tab==='weigh'?weighHtml():weekHtml();
+  document.querySelectorAll('.tab').forEach(function(b){ var on=b.dataset.v===ui.tab; b.classList.toggle('is-on',on); if(on) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current'); });
+  paintTimer();
+  if(fk){ try{ var el=document.querySelector(fk); if(el) el.focus({preventScroll:true}); }catch(e){} }
+  pendingRender=false;
+}
+function isEditing(){ var a=document.activeElement; return !!a&&(a.tagName==='INPUT'||a.tagName==='TEXTAREA'); }
+function softRender(){ if(isEditing()) pendingRender=true; else render(); }
+
+/* ---------- rest timer ---------- */
+var T={end:0,total:0,iv:null,done:false,ctx:null,doneTo:null};
+function clock(s){ return Math.floor(s/60)+':'+pad(s%60); }
+function startTimer(sec){
+  try{ var AC=window.AudioContext||window.webkitAudioContext; if(AC){ T.ctx=T.ctx||new AC(); if(T.ctx.state==='suspended') T.ctx.resume(); } }catch(e){}
+  clearTimeout(T.doneTo); clearInterval(T.iv);
+  T.total=sec; T.end=Date.now()+sec*1000; T.done=false; T.iv=setInterval(tick,250); paintTimer();
+}
+function stopTimer(){ clearInterval(T.iv); clearTimeout(T.doneTo); T.iv=null; T.end=0; T.done=false; paintTimer(); }
+function tick(){
+  if(T.end&&Date.now()>=T.end){
+    clearInterval(T.iv); T.iv=null; T.end=0; T.done=true; timerAlert();
+    T.doneTo=setTimeout(function(){ T.done=false; paintTimer(); },10000);
+  }
+  paintTimer();
+}
+function timerAlert(){
+  try{
+    var c=T.ctx; if(c){ var t0=c.currentTime;
+      [0,0.3,0.6].forEach(function(o,i){
+        var os=c.createOscillator(), g=c.createGain(); os.type='sine'; os.frequency.value=i===2?1175:880;
+        g.gain.setValueAtTime(0.0001,t0+o); g.gain.exponentialRampToValueAtTime(0.4,t0+o+0.02); g.gain.exponentialRampToValueAtTime(0.0001,t0+o+0.24);
+        os.connect(g); g.connect(c.destination); os.start(t0+o); os.stop(t0+o+0.26);
+      });
+    }
+  }catch(e){}
+  try{ if(navigator.vibrate) navigator.vibrate([200,100,200,100,400]); }catch(e){}
+}
+function paintTimer(){
+  var left=T.end?Math.max(0,Math.ceil((T.end-Date.now())/1000)):0, panel=$('#timer'), chipEl=$('#tchip');
+  if(panel){
+    panel.classList.toggle('run',!!T.end); panel.classList.toggle('done',T.done);
+    var n=$('#timer-n'); if(n) n.textContent=T.done?'סיום!':clock(left);
+    var f=$('#timer-f'); if(f) f.style.width=(T.end&&T.total?left/T.total*100:0)+'%';
+  }
+  if(chipEl){
+    var show=(T.end||T.done)&&!panel;
+    chipEl.hidden=!show; chipEl.classList.toggle('done',T.done);
+    if(show) chipEl.textContent=T.done?'המנוחה נגמרה':clock(left);
+  }
+}
+
+/* ---------- persistence ---------- */
+var col=null, cloudReady=false, pushing=false, pushAgain=false, saveTimer=null, retryTimer=null, lastPull=0, pulling=false;
+function setStatus(s){
+  var el=$('#save'); if(!el) return; el.dataset.s=s;
+  el.textContent=s==='saving'?'שומר…':s==='saved'?'נשמר ✓':s==='local'?'נשמר במכשיר ✓':'לא נשמר';
+}
+function loadLocal(){
+  try{
+    var raw=localStorage.getItem(LS_KEY); if(!raw) return;
+    var o=JSON.parse(raw);
+    if(o&&typeof o==='object'){
+      days={}; if(o.days&&typeof o.days==='object') Object.keys(o.days).forEach(function(k){ if(isDate(k)) days[k]=norm(o.days[k]); });
+      meta=normMeta(o.meta);
+      dirty=(o.dirty&&typeof o.dirty==='object')?o.dirty:{};
+      Object.keys(dirty).forEach(function(k){ if(typeof dirty[k]==='number'&&dirty[k]>seq) seq=dirty[k]; });
+    }
+  }catch(e){}
+}
+function saveLocal(){ try{ localStorage.setItem(LS_KEY,JSON.stringify({days:days,meta:meta,dirty:dirty})); return true; }catch(e){ return false; } }
+function scheduleSave(){ setStatus('saving'); clearTimeout(saveTimer); saveTimer=setTimeout(flush,500); }
+function flush(){
+  clearTimeout(saveTimer); saveTimer=null;
+  var ok=saveLocal();
+  if(cloudReady) pushDirty(); else setStatus(ok?'saved':'error');
+}
+function pushDirty(){
+  if(!cloudReady||!col) return Promise.resolve();
+  if(pushing){ pushAgain=true; return Promise.resolve(); }
+  pushing=true;
+  var failed=false;
+  function one(keys,i){
+    if(i>=keys.length) return Promise.resolve();
+    var key=keys[i], stamp=dirty[key], p;
+    try{
+      if(key==='meta') p=col.doc('meta').set(clone(meta));
+      else{
+        var date=key.slice(2), d=days[date];
+        if(!isDate(date)){ delete dirty[key]; return one(keys,i+1); }
+        if(d){ var body=clone(d); body.d=date; p=col.doc(key).set(body); } else p=col.doc(key).delete();
+      }
+    }catch(e){ failed=true; return Promise.resolve(); }
+    return Promise.resolve(p).then(function(){ if(dirty[key]===stamp) delete dirty[key]; return one(keys,i+1); },function(){ failed=true; });
+  }
+  function loop(){
+    pushAgain=false;
+    return one(Object.keys(dirty),0).then(function(){ if(pushAgain&&!failed) return loop(); });
+  }
+  return loop().then(function(){
+    pushing=false; saveLocal();
+    if(failed){
+      setStatus('local'); clearTimeout(retryTimer);
+      retryTimer=setTimeout(function(){ if(Object.keys(dirty).length) pushDirty(); },20000);
+    }else if(!saveTimer) setStatus('saved');
+  });
+}
+function withTimeout(p,ms){
+  return new Promise(function(res,rej){ var t=setTimeout(function(){ rej(new Error('timeout')); },ms); Promise.resolve(p).then(function(v){ clearTimeout(t); res(v); },function(e){ clearTimeout(t); rej(e); }); });
+}
+function pullCloud(){
+  if(!col||pulling) return Promise.resolve(false);
+  pulling=true;
+  var cd={}, cm=null;
+  function page(last,guard){
+    var q=last?col.where('d','>',last):col;
+    return q.orderBy('d').limit(500).get().then(function(qs){
+      var lastSeen=last;
+      qs.docs.forEach(function(s){ var b=s.data(); if(b&&isDate(b.d)){ b=clone(b); var date=b.d; delete b.d; cd[date]=norm(b); lastSeen=date; } });
+      if(qs.size>=500&&guard<40&&lastSeen&&lastSeen!==last) return page(lastSeen,guard+1);
+    });
+  }
+  return withTimeout(col.doc('meta').get().then(function(ms){ if(ms.exists) cm=normMeta(clone(ms.data())); return page('',0); }),15000).then(function(){
+    var before=JSON.stringify([days,meta]);
+    Object.keys(cd).forEach(function(date){
+      var local=days[date], cloud=cd[date], key='d_'+date;
+      if(!local||(cloud.t||0)>(local.t||0)){ days[date]=cloud; delete dirty[key]; }
+      else if((local.t||0)>(cloud.t||0)){ if(!dirty[key]) dirty[key]=++seq; }
+    });
+    Object.keys(days).forEach(function(date){ if(!cd[date]&&!dirty['d_'+date]) dirty['d_'+date]=++seq; });
+    if(cm&&(cm.t||0)>(meta.t||0)){ meta=cm; delete dirty.meta; }
+    else if((!cm&&(meta.t||Object.keys(meta.weights).length))||(cm&&(meta.t||0)>(cm.t||0))){ if(!dirty.meta) dirty.meta=++seq; }
+    lastPull=Date.now(); pulling=false; saveLocal();
+    return JSON.stringify([days,meta])!==before;
+  },function(e){ pulling=false; throw e; });
+}
+function initCloud(){
+  if(!window.claude||typeof window.claude.use!=='function') return Promise.resolve();
+  return Promise.all([window.claude.use('db'),window.claude.use('user')]).then(function(r){
+    var db=r[0], user=r[1]; if(!db||!user) return;
+    return user.id().then(function(uid){
+      if(!uid) return;
+      col=db.collection('data/users/'+uid);
+      return tryPull(0);
+    });
+  }).catch(function(){});
+}
+function tryPull(attempt){
+  return pullCloud().then(function(changed){
+    cloudReady=true;
+    var n=$('#sync-note'); if(n) n.textContent=syncNote();
+    if(changed) softRender();
+    if(Object.keys(dirty).length) pushDirty(); else if(!saveTimer) setStatus('saved');
+  },function(){
+    if(attempt<3) setTimeout(function(){ tryPull(attempt+1); },20000*(attempt+1));
+  });
+}
+
+/* ---------- backup ---------- */
+function exportText(){
+  var out={}; Object.keys(days).sort().forEach(function(k){ if(hasActivity(days[k])) out[k]=days[k]; });
+  return JSON.stringify({app:'keto-strength-tracker',version:1,exportedAt:new Date().toISOString(),days:out,meta:meta},null,2);
+}
+function bk(msg,err){ ui.bkMsg=msg; ui.bkErr=!!err; }
+function isStandalone(){ try{ return navigator.standalone===true||(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches); }catch(e){ return false; } }
+function doExport(){
+  var data=exportText(), name='keto-backup-'+todayStr()+'.json';
+  var use=window.claude&&typeof window.claude.use==='function'?window.claude.use('downloads'):Promise.resolve(null);
+  Promise.resolve(use).then(function(dl){
+    if(dl) return dl.save({filename:name,data:data}).then(function(){ bk('הגיבוי נשמר כקובץ.'); },function(e){
+      if(e&&e.code==='declined'){ bk(''); return; }
+      ui.bkText=data; bk('לא ניתן לשמור קובץ כאן. אפשר להעתיק את הגיבוי מהתיבה.',true);
+    });
+    /* Installed on a phone home screen: hand the file to the system share sheet (Save to Files). */
+    if(isStandalone()){
+      try{
+        var file=new File([data],name,{type:'application/json'});
+        if(navigator.canShare&&navigator.canShare({files:[file]})) return navigator.share({files:[file]}).then(function(){ bk('הגיבוי נשמר.'); },function(e){
+          if(e&&e.name==='AbortError'){ bk(''); return; }
+          ui.bkText=data; bk('אפשר להעתיק את הגיבוי מהתיבה.');
+        });
+      }catch(e){}
+      ui.bkText=data; bk('אפשר להעתיק את הגיבוי מהתיבה.'); return;
+    }
+    try{
+      var a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([data],{type:'application/json'})); a.download=name;
+      document.body.appendChild(a); a.click(); a.remove(); setTimeout(function(){ URL.revokeObjectURL(a.href); },4000);
+      bk('ההורדה התחילה. אם לא נשמר קובץ, אפשר להשתמש ב״העתקת הגיבוי״.');
+    }catch(e){ ui.bkText=data; bk('אפשר להעתיק את הגיבוי מהתיבה.'); }
+  }).catch(function(){ ui.bkText=data; bk('אפשר להעתיק את הגיבוי מהתיבה.'); }).then(function(){ if(ui.tab==='week') render(); });
+}
+function doCopy(){
+  var data=exportText();
+  function fallback(){ ui.bkText=data; bk('ההעתקה נחסמה. הגיבוי מוצג בתיבה – אפשר לסמן ולהעתיק.'); render(); var t=$('#bk-text'); if(t){ t.focus(); t.select(); } }
+  try{ navigator.clipboard.writeText(data).then(function(){ bk('הגיבוי הועתק.'); render(); },fallback); }catch(e){ fallback(); }
+}
+function parseImport(text){
+  var o; try{ o=JSON.parse(text); }catch(e){ return null; }
+  if(!o||typeof o!=='object'||!o.days||typeof o.days!=='object'||Array.isArray(o.days)) return null;
+  var out={days:{},meta:normMeta(o.meta&&typeof o.meta==='object'?clone(o.meta):{})};
+  Object.keys(o.days).forEach(function(k){ if(isDate(k)&&o.days[k]&&typeof o.days[k]==='object') out.days[k]=norm(clone(o.days[k])); });
+  return out;
+}
+function stageImport(text){
+  var o=parseImport(text);
+  if(!o){ ui.pendingImport=null; bk('זה לא קובץ גיבוי תקין של היומן.',true); }
+  else{ ui.pendingImport=o; bk(''); ui.bkText=''; }
+  render();
+}
+function applyImport(){
+  var o=ui.pendingImport; if(!o) return;
+  var old=Object.keys(days), now=Date.now();
+  days={};
+  Object.keys(o.days).forEach(function(k){ var d=o.days[k]; d.t=now; days[k]=d; dirty['d_'+k]=++seq; });
+  old.forEach(function(k){ if(!days[k]){ var e=blankDay(); e.t=now; days[k]=e; dirty['d_'+k]=++seq; } });
+  meta=o.meta; ui.pendingImport=null; touchMeta();
+  bk('הגיבוי נטען.'); render();
+}
+
+/* ---------- actions ---------- */
+function stamp(d,m){
+  if(mealLogged(d,m)&&!d[m].time&&ui.date===todayStr()) d[m].time=nowHM();
+}
+function setExPref(id,k,v){ if(!meta.ex[id]||typeof meta.ex[id]!=='object') meta.ex[id]={}; meta.ex[id][k]=v; touchMeta(); }
+function onAct(el){
+  var act=el.dataset.act, v=el.dataset.v, date=ui.date, ex, i;
+  switch(act){
+    case 'tab': if(ui.tab!==v){ ui.tab=v; ui.delW=null; render(); window.scrollTo(0,0); } return;
+    case 'date': ui.date=v; render(); return;
+    case 'week': ui.date=addDays(ui.date,Number(v)); render(); return;
+    case 'today': ui.date=todayStr(); render(); return;
+    case 'goto': ui.date=v; ui.tab='daily'; render(); window.scrollTo(0,0); return;
+    case 'jump': var t=$('#sec-workout'); if(t) t.scrollIntoView({behavior:'smooth',block:'start'}); return;
+    case 'type': mutate(date,function(d){ d.type=d.type===v?null:v; }); break;
+    case 'habit': mutate(date,function(d){ d.habits[v]=!d.habits[v]; }); break;
+    case 'scoops': mutate(date,function(d){ var n=Number(v), was=mealLogged(d,'shake'); if(d.shake.scoops==n) d.shake.scoops=null; else{ d.shake.scoops=n; if(!was) d.shake.cream=true; } stamp(d,'shake'); }); break;
+    case 'cream': mutate(date,function(d){ d.shake.cream=!d.shake.cream; stamp(d,'shake'); }); break;
+    case 'eggs': mutate(date,function(d){ var n=Number(v); d.lunch.eggs=d.lunch.eggs==n?null:n; stamp(d,'lunch'); }); break;
+    case 'eggq': mutate(date,function(d){ var n=Math.max(0,Math.min(12,(Number(d.lunch.eggs)||0)+Number(el.dataset.d))); d.lunch.eggs=n||null; stamp(d,'lunch'); }); break;
+    case 'side': mutate(date,function(d){ d.lunch.side=d.lunch.side===v?null:v; stamp(d,'lunch'); }); break;
+    case 'fadd':
+    case 'fq':
+      var fm=el.dataset.meal, fd=FOODS[v]; if(!fd||!MEALS_ITEMS[fm]) return;
+      mutate(date,function(d){
+        var it=d[fm].items[v], q=it?Number(it.q)||0:0;
+        q+=act==='fadd'?1:Number(el.dataset.d)*(fd.kg!=null?0.5:1);
+        if(q<=0) delete d[fm].items[v];
+        else if(it) it.q=Math.min(50,q);
+        else d[fm].items[v]=fd.kg!=null?{q:q,g:fd.g}:{q:q};
+        stamp(d,fm);
+      });
+      break;
+    case 'snack': mutate(date,function(d){ d.snack.on=!d.snack.on; stamp(d,'snack'); }); break;
+    case 'now': mutate(date,function(d){ d[el.dataset.meal].time=nowHM(); }); break;
+    case 'time-clear': mutate(date,function(d){ d[el.dataset.meal].time=''; }); break;
+    case 'unit':
+      ex=EX_BY_ID[el.dataset.ex]; if(!ex) return;
+      setExPref(ex.id,'u',v==='lb'?'lb':'kg');
+      if(days[date]&&viewDay(date).workout.ex[ex.id]) mutate(date,function(d){ d.workout.ex[ex.id].u=v==='lb'?'lb':'kg'; });
+      break;
+    case 'bar':
+      ex=EX_BY_ID[el.dataset.ex]; if(!ex) return;
+      setExPref(ex.id,'bar',Number(v)===15?15:20);
+      if(days[date]&&viewDay(date).workout.ex[ex.id]) mutate(date,function(d){ d.workout.ex[ex.id].bar=Number(v)===15?15:20; });
+      break;
+    case 'incline-add': mutate(date,function(d){ d.workout.incline=(meta.ex.incline&&meta.ex.incline.variant)==='db'?'db':'bb'; }); break;
+    case 'incline-remove': mutate(date,function(d){ d.workout.incline=false; }); break;
+    case 'incline-var': setExPref('incline','variant',v==='db'?'db':'bb'); mutate(date,function(d){ d.workout.incline=v==='db'?'db':'bb'; }); break;
+    case 'setok':
+      ex=EX_BY_ID[el.dataset.ex]; i=Number(el.dataset.i); if(!ex||!(i>=0&&i<MAX_SETS)) return;
+      var dv=viewDay(date), cur=(dv.workout.ex[ex.id]&&dv.workout.ex[ex.id].sets&&dv.workout.ex[ex.id].sets[i])||{w:'',r:''};
+      if(setLogged(cur)) return;
+      var ph=placeholders(ex,exUnit(ex,dv),lastSession(ex.id,date),i), w=needsW(ex);
+      var wv=cur.w!==''&&cur.w!=null?cur.w:ph.w;
+      if(ph.r===''||(w&&wv==='')){
+        var target=$((w&&wv==='')?'#w-'+ex.id+'-'+i:'#r-'+ex.id+'-'+i); if(target) target.focus();
+        return;
+      }
+      mutate(date,function(d){ var r=ensureRec(d,ex,i+1); if(w) r.sets[i].w=String(wv); r.sets[i].r=String(ph.r); });
+      break;
+    case 'set-add':
+      ex=EX_BY_ID[el.dataset.ex]; if(!ex) return;
+      mutate(date,function(d){ var r=ensureRec(d,ex); if(r.sets.length<MAX_SETS) r.sets.push({w:'',r:''}); });
+      break;
+    case 'set-del':
+      ex=EX_BY_ID[el.dataset.ex]; if(!ex) return;
+      mutate(date,function(d){ var r=ensureRec(d,ex); if(r.sets.length>ex.sets) r.sets.pop(); });
+      break;
+    case 'timer': startTimer(Number(v)); return;
+    case 'timer-stop': stopTimer(); return;
+    case 'w-save':
+      var kg=toNum($('#w-kg').value), wd=$('#w-date').value;
+      if(!isDate(wd)){ ui.wMsg='יש לבחור תאריך.'; break; }
+      if(!(kg>=30&&kg<=250)){ ui.wMsg='יש להזין משקל בק״ג, למשל 82.4.'; break; }
+      ui.wMsg=''; meta.weights[wd]=Math.round(kg*10)/10; ui.wDate=null; touchMeta(); break;
+    case 'w-del': ui.delW=v; break;
+    case 'w-del-no': ui.delW=null; break;
+    case 'w-del-yes': delete meta.weights[v]; ui.delW=null; touchMeta(); break;
+    case 'export': doExport(); return;
+    case 'copy': doCopy(); return;
+    case 'import-yes': applyImport(); return;
+    case 'import-no': ui.pendingImport=null; break;
+    case 'import-text': stageImport(($('#imp-text')||{}).value||''); return;
+    default: return;
+  }
+  render();
+}
+function paintSet(ex,i){
+  var d=viewDay(ui.date), rec=d.workout.ex[ex.id], s=(rec&&rec.sets&&rec.sets[i])||{w:'',r:''};
+  var ok=$('#ok-'+ex.id+'-'+i); if(ok) ok.setAttribute('aria-pressed',String(setLogged(s)));
+  var hb=$('#h-'+ex.id+'-'+i);
+  if(hb&&needsW(ex)){
+    var unit=exUnit(ex,d), ph=placeholders(ex,unit,lastSession(ex.id,ui.date),i), h=hintHtml(ex,unit,exBar(ex,d),s.w,ph.w);
+    hb.innerHTML=h.html; hb.classList.toggle('ph',h.ph);
+  }
+}
+function onInput(el){
+  var kind=el.dataset.in, date=ui.date;
+  if(kind==='time'){ mutate(date,function(d){ d[el.dataset.meal].time=el.value||''; }); updateSummary(); }
+  else if(kind==='fgrams'){
+    var fm=el.dataset.meal, fid=el.dataset.food, fd=FOODS[fid]; if(!fd||!MEALS_ITEMS[fm]) return;
+    var dd=mutate(date,function(d){ var it=d[fm].items[fid]; if(it){ var n=toNum(el.value); it.g=isNaN(n)?0:Math.max(0,Math.min(3000,n)); } });
+    var sub=$('#fk-'+fm+'-'+fid); if(sub&&dd[fm].items[fid]) sub.innerHTML=foodSub(fd,dd[fm].items[fid]);
+    updateSummary();
+  }
+  else if(kind==='fqty'){
+    var qm=el.dataset.meal, qid=el.dataset.food, qf=FOODS[qid]; if(!qf||!MEALS_ITEMS[qm]) return;
+    var qn=toNum(el.value); qn=isNaN(qn)?0:Math.max(0,Math.min(50,Math.round(qn)));
+    mutate(date,function(d){ if(qn>0) d[qm].items[qid]={q:qn}; else delete d[qm].items[qid]; stamp(d,qm); });
+    var qs=$('#fk-'+qm+'-'+qid); if(qs) qs.innerHTML=foodSub(qf,{q:qn});
+    updateSummary(); pendingRender=true;
+  }
+  else if(kind==='notes'){ mutate(date,function(d){ d.notes=String(el.value).slice(0,600); }); updateSummary(); }
+  else if(kind==='set'){
+    var ex=EX_BY_ID[el.dataset.ex], i=Number(el.dataset.i), f=el.dataset.f==='w'?'w':'r'; if(!ex||!(i>=0&&i<MAX_SETS)) return;
+    mutate(date,function(d){ var r=ensureRec(d,ex,i+1); r.sets[i][f]=String(el.value).slice(0,8); });
+    paintSet(ex,i); updateSummary();
+  }
+}
+
+/* ---------- events ---------- */
+document.addEventListener('click',function(e){
+  var el=e.target.closest?e.target.closest('[data-act]'):null;
+  if(el&&el.closest('#app')) onAct(el);
+});
+document.addEventListener('input',function(e){ var el=e.target; if(el&&el.dataset&&el.dataset.in) onInput(el); });
+document.addEventListener('change',function(e){
+  var el=e.target; if(!el) return;
+  if(el.id==='w-date'){ if(isDate(el.value)){ ui.wDate=el.value; var k=$('#w-kg'); if(k) k.placeholder=meta.weights[el.value]?Number(meta.weights[el.value]).toFixed(1):BASE_KG.toFixed(1); } }
+  else if(el.id==='imp-file'){
+    var f=el.files&&el.files[0]; if(!f) return;
+    var fr=new FileReader();
+    fr.onload=function(){ stageImport(String(fr.result||'')); };
+    fr.onerror=function(){ bk('לא ניתן לקרוא את הקובץ.',true); render(); };
+    fr.readAsText(f);
+  }
+});
+document.addEventListener('keydown',function(e){
+  var el=e.target; if(!el) return;
+  if(e.key==='Enter'&&el.id==='w-kg'){ e.preventDefault(); var b=$('[data-act="w-save"]'); if(b) b.click(); }
+  if((e.key==='Enter'||e.key===' ')&&el.matches&&el.matches('label[for="imp-file"]')){ e.preventDefault(); var fi=$('#imp-file'); if(fi) fi.click(); }
+});
+document.addEventListener('focusout',function(){ setTimeout(function(){ if(pendingRender&&!isEditing()) render(); },0); });
+document.addEventListener('visibilitychange',function(){
+  if(document.visibilityState==='hidden'){ if(saveTimer) flush(); }
+  else{
+    paintTimer();
+    if(cloudReady&&!saveTimer&&!pushing&&Date.now()-lastPull>60000){
+      pullCloud().then(function(changed){ if(changed) softRender(); if(Object.keys(dirty).length) pushDirty(); },function(){});
+    }
+  }
+});
+window.addEventListener('pagehide',function(){ if(saveTimer) flush(); });
+
+/* ---------- boot ---------- */
+loadLocal();
+render();
+initCloud();
+})();
+</script>
+
+<script>
+if('serviceWorker' in navigator){ window.addEventListener('load',function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); }); }
+</script>
+</body>
+</html>
