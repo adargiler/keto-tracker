@@ -79,6 +79,7 @@ h1,h2,h3,h4,p{margin:0}
 .hint{font-size:12px;color:var(--muted)}
 .mt{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
 .lbl{font-size:12px;color:var(--muted);letter-spacing:.02em}
+.lbl .todo{color:var(--yolk)}
 .grp{display:flex;flex-direction:column;gap:6px}
 .sec-h{font-family:var(--font-display);font-size:28px;line-height:1;font-weight:700;letter-spacing:.5px;margin-top:8px}
 
@@ -342,6 +343,8 @@ var FOODS={
   pargitoil:{label:'סטייק פרגית בשמן זית',g:350,kg:1.84,pg:0.19},
   seafoodbutter:{label:'שרימפס / פירות ים בחמאה',g:350,kg:1.41,pg:0.19},
   grill:{label:'נתח על הגריל / המבורגר',g:400,kg:2.85,pg:0.18},
+  steakstrips:{label:'רצועות סטייק',g:100,kg:2.0,pg:0.21,note:'משקל נא'},
+  asadoplancha:{label:'אסאדו על הפלנצ׳ה',g:100,kg:3.3,pg:0.16,note:'משקל נא, בלי עצם'},
   cheddar:{label:'פרוסת צ׳דר',k:85,p:5},
   buche:{label:'פרוסת בושה',k:75,p:4.5},
   hardcheese:{label:'גבינה קשה אחרת (20 גרם)',k:75,p:5},
@@ -359,17 +362,26 @@ var FOODS={
   jalapeno:{label:'חלפיניו',k:5,p:0},
   butter:{label:'חמאה (כף)',k:108,p:0},
   oliveoil:{label:'שמן זית (כף)',k:120,p:0},
+  tallow:{label:'שומן בקר (כף)',k:115,p:0},
+  butter20:{label:'חמאה (20 גרם)',k:143,p:0.2},
+  eggbutter:{label:'חמאה לביצים (15–20 גרם)',k:125,p:0},
   pecan:{label:'פקאן (חצי אגוז)',k:10,p:0.15,cnt:true},
   macadamia:{label:'מקדמיה',k:19,p:0.2,cnt:true},
   brazil:{label:'אגוז ברזיל',k:33,p:0.7,cnt:true}
 };
 var SNACK_GROUPS=[{label:'אגוזים – לפי מספר',ids:['pecan','macadamia','brazil']}];
 var MEALS_ITEMS={lunch:1,dinner:1,snack:1};
-var LUNCH_GROUPS=[{label:'תוספת חלבון – רק כשמתחשק',ids:['bacon','pulledasado','cheddar','buche','hardcheese','tuna']}];
+var FATS=['tallow','oliveoil','butter20'];
+/* Any of these in a meal counts as a frying fat already logged (butter / eggbutter are older entries). */
+var FAT_IDS=FATS.concat(['butter','eggbutter']);
+var LUNCH_GROUPS=[
+  {label:function(d){ return 'שומן לטיגון'+(Number(d.lunch.eggs)>0&&!FAT_IDS.some(function(id){ return d.lunch.items[id]; })?' – <span class="todo">עוד לא נבחר</span>':''); },ids:FATS},
+  {label:'תוספת חלבון – רק כשמתחשק',ids:['steakstrips','asadoplancha','bacon','pulledasado','cheddar','buche','hardcheese','tuna']}
+];
 var DINNER_GROUPS=[
   {label:'נתחים על הגריל והמבורגרים',ids:['entrecote','sinta','burger','lambchop','asado']},
   {label:'קצוץ ומוקפצים – בוחרים בסיס ומוסיפים תוספות',ids:['groundbeef','pargitoil','seafoodbutter']},
-  {label:'תוספות – פטריות, גבינות, רטבים ושומן',ids:['mushrooms','parmesan','cheddar','buche','hardcheese','kapaosauce','friedegg','garlic','onion','jalapeno','butter','oliveoil','bacon','avocado','salad']}
+  {label:'תוספות – פטריות, גבינות, רטבים ושומן',ids:['mushrooms','parmesan','cheddar','buche','hardcheese','kapaosauce','friedegg','garlic','onion','jalapeno','tallow','oliveoil','butter20','bacon','avocado','salad']}
 ];
 /* Entries saved before items had quantities. */
 var OLD_ADDON={bacon:{id:'bacon',q:3},asado:{id:'pulledasado',q:1},cheese:{id:'hardcheese',q:2},tuna:{id:'tuna',q:1}};
@@ -429,7 +441,7 @@ var pendingRender=false;
 function blankDay(){
   return {t:0,type:null,habits:{salt:false,mag:false,creatine:false},
     shake:{scoops:null,cream:false,time:''},
-    lunch:{eggs:null,items:{},addons:[],side:null,time:''},
+    lunch:{eggs:null,items:{},addons:[],side:null,time:'',fv:1},
     dinner:{items:{},preset:null,grams:null,time:''},
     snack:{on:false,items:{},time:''},
     notes:'',workout:{incline:false,ex:{}}};
@@ -447,6 +459,8 @@ function normItems(o){
 function norm(d){
   var b=blankDay(), k, j;
   if(!d||typeof d!=='object'||Array.isArray(d)) return b;
+  /* Days saved before the frying fat was chosen separately counted butter with the eggs. */
+  var oldFat=!!d.lunch&&typeof d.lunch==='object'&&d.lunch.fv===undefined;
   for(k in b){
     if(d[k]==null){ d[k]=b[k]; continue; }
     if(b[k]&&typeof b[k]==='object'&&!Array.isArray(b[k])){
@@ -460,6 +474,7 @@ function norm(d){
     d.lunch.addons.forEach(function(a){ var m=OLD_ADDON[a]; if(m&&!d.lunch.items[m.id]) d.lunch.items[m.id]={q:m.q}; });
     d.lunch.addons=[];
   }
+  if(oldFat&&Number(d.lunch.eggs)>0&&!d.lunch.items.eggbutter) d.lunch.items.eggbutter={q:1};
   if(d.dinner.preset){
     var oid=OLD_DINNER[d.dinner.preset];
     if(oid&&!d.dinner.items[oid]) d.dinner.items[oid]={q:1,g:d.dinner.grams==null?FOODS[oid].g:Math.max(0,Number(d.dinner.grams)||0)};
@@ -507,7 +522,7 @@ function totals(d){
   if(s){ r.shake.k+=N.scoop.k*s; r.shake.p+=N.scoop.p*s; }
   if(d.shake.cream){ r.shake.k+=N.cream.k; r.shake.p+=N.cream.p; }
   var e=Number(d.lunch.eggs)||0;
-  if(e){ r.lunch.k+=e*N.egg.k+N.butter.k; r.lunch.p+=e*N.egg.p; }
+  if(e){ r.lunch.k+=e*N.egg.k; r.lunch.p+=e*N.egg.p; }
   addItems(d.lunch.items,r.lunch);
   var sd=byId(N.sides,d.lunch.side); if(sd){ r.lunch.k+=sd.k; r.lunch.p+=sd.p; }
   addItems(d.dinner.items,r.dinner);
@@ -708,7 +723,7 @@ function foodPicker(meal,groups,d){
   var ids=Object.keys(items).filter(function(id){ return FOODS[id]&&Number(items[id].q)>0; });
   if(ids.length) h+='<div class="grp">'+ids.map(function(id){ return foodRow(meal,id,items[id]); }).join('')+'</div>';
   groups.forEach(function(g){
-    h+='<div class="grp"><span class="lbl">'+g.label+'</span><div class="chips">'+g.ids.map(function(id){
+    h+='<div class="grp"><span class="lbl">'+(typeof g.label==='function'?g.label(d):g.label)+'</span><div class="chips">'+g.ids.map(function(id){
       var q=items[id]?Number(items[id].q)||0:0;
       return '<button class="chip" data-act="fadd" data-meal="'+meal+'" data-v="'+id+'" aria-pressed="'+(q>0)+'">'+FOODS[id].label+(q>0?' <bdi dir="ltr">×'+trim(q)+'</bdi>':'')+'</button>';
     }).join('')+'</div></div>';
@@ -721,7 +736,7 @@ function lunchHtml(d,t){
     var sub=k===4?'יום אימון':k===5?'יום מנוחה':'&nbsp;';
     return chip('eggs',k,k+'<small>'+sub+'</small>',n===k,{cls:k===def?'is-default':''});
   }).join('');
-  var body='<div class="grp"><span class="lbl">ביצים בחמאה (15–20 גרם חמאה)</span><div class="eggs">'+eggs+'</div>'
+  var body='<div class="grp"><span class="lbl">ביצים</span><div class="eggs">'+eggs+'</div>'
     +'<div class="eggstep"><span class="hint">כמות אחרת</span>'+stepper('eggq','',n,'ביצים')+'</div></div>'
     +foodPicker('lunch',LUNCH_GROUPS,d)
     +'<div class="grp"><span class="lbl">תוספת צד – אחת לכל היותר</span><div class="chips">'
