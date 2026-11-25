@@ -345,6 +345,12 @@ var FOODS={
   grill:{label:'נתח על הגריל / המבורגר',g:400,kg:2.85,pg:0.18},
   steakstrips:{label:'רצועות סטייק',g:100,kg:2.0,pg:0.21,note:'משקל נא'},
   asadoplancha:{label:'אסאדו על הפלנצ׳ה',g:100,kg:3.3,pg:0.16,note:'משקל נא, בלי עצם'},
+  schnitzpargit:{label:'שניצל פרגית',g:300,kg:1.5,pg:0.19,note:'משקל נא'},
+  schnitzbreast:{label:'שניצל חזה עוף דק',g:300,kg:1.2,pg:0.225,note:'משקל נא'},
+  schnitzfillet:{label:'שניצל פילה עוף',g:300,kg:1.2,pg:0.225,note:'משקל נא'},
+  porkrinds:{label:'פורק רינדס טחון לציפוי',g:30,kg:5.44,pg:0.61,note:'מה שנדבק לעוף'},
+  coategg:{label:'ביצה לציפוי',k:72,p:6.3},
+  mustard:{label:'חרדל (כף)',k:10,p:0.6},
   cheddar:{label:'פרוסת צ׳דר',k:85,p:5},
   buche:{label:'פרוסת בושה',k:75,p:4.5},
   hardcheese:{label:'גבינה קשה אחרת (20 גרם)',k:75,p:5},
@@ -381,6 +387,7 @@ var LUNCH_GROUPS=[
 var DINNER_GROUPS=[
   {label:'נתחים על הגריל והמבורגרים',ids:['entrecote','sinta','burger','lambchop','asado']},
   {label:'קצוץ ומוקפצים – בוחרים בסיס ומוסיפים תוספות',ids:['groundbeef','pargitoil','seafoodbutter']},
+  {label:'שניצל קטו – עוף, ציפוי, ושומן בקר (כמה כפות נספגו, לא כמה נשאר במחבת)',ids:['schnitzpargit','schnitzbreast','schnitzfillet','porkrinds','coategg','mustard','tallow']},
   {label:'תוספות – פטריות, גבינות, רטבים ושומן',ids:['mushrooms','parmesan','cheddar','buche','hardcheese','kapaosauce','friedegg','garlic','onion','jalapeno','tallow','oliveoil','butter20','bacon','avocado','salad']}
 ];
 /* Entries saved before items had quantities. */
@@ -391,6 +398,7 @@ var YT='https://www.youtube.com/watch?v=';
 var WORKOUTS={
   A:{title:'אימון A – פלג גוף עליון',ex:[
     {id:'bench',he:'לחיצת חזה בשכיבה במוט',en:'Bench Press',sets:3,reps:'8–10',kind:'barbell',yt:'hWbUlkb5Ms4'},
+    {id:'pecdeck',he:'פרפר במכונה (פק דק)',en:'Pec Deck Fly',sets:3,reps:'12–15',kind:'pin',yt:'ze4JaQCcGLg',from:'2026-11-25'},
     {id:'lat',he:'משיכת פולי עליון לחזה',en:'Lat Pulldown',sets:3,reps:'8–10',kind:'pin',yt:'bNmvKpJSWKM'},
     {id:'row',he:'חתירה בישיבה בכבל',en:'Seated Cable Row',sets:3,reps:'8–10',kind:'pin',yt:'qD1WZ5pSuvk'},
     {id:'shoulder',he:'לחיצת כתפיים במכונה',en:'Machine Shoulder Press',sets:2,reps:'8–10',kind:'pin',yt:'6v4nrRVySj0'},
@@ -551,10 +559,17 @@ function winHtml(d){
 }
 function mtTxt(x){ return x.k>0?'<bdi dir="ltr">'+num(x.k)+'</bdi> קק״ל · <bdi dir="ltr">'+num(x.p)+'</bdi> ג׳ חלבון':''; }
 function setLogged(s){ return !!s && s.r!=='' && s.r!=null; }
+function exDone(d,id){ var r=d.workout.ex[id]; return !!r&&Array.isArray(r.sets)&&r.sets.some(setLogged); }
 function inclineVar(d){
   var v=d.workout.incline;
-  if(v!=='bb'&&v!=='db') v=meta.ex.incline&&meta.ex.incline.variant;
+  if(v!=='bb'&&v!=='db') v=exDone(d,'incline_db')&&!exDone(d,'incline_bb')?'db':exDone(d,'incline_bb')?'bb':meta.ex.incline&&meta.ex.incline.variant;
   return v==='db'?'db':'bb';
+}
+/* Until 2026-11-24 the incline press was a standard part of day A, right after the bench press.
+   From 2026-11-25 the pec deck is the second chest exercise and the incline press is added per day, after it. */
+var INCLINE_OPT='2026-11-25';
+function inclineOn(d,date){
+  return d.workout.incline==='bb'||d.workout.incline==='db'||!date||date<INCLINE_OPT||exDone(d,'incline_bb')||exDone(d,'incline_db');
 }
 /* An exercise added to the plan later (from) is not expected on earlier days unless it was logged there. */
 function exList(d,date){
@@ -562,8 +577,12 @@ function exList(d,date){
   var out=[];
   w.ex.forEach(function(e){
     if(e.from&&date&&date<e.from&&!d.workout.ex[e.id]) return;
-    out.push(e); if(e.id==='bench') out.push(INCLINE[inclineVar(d)]);
+    out.push(e);
   });
+  if(d.type==='A'&&inclineOn(d,date)){
+    var at=out.indexOf(EX_BY_ID.pecdeck); if(at<0) at=out.indexOf(EX_BY_ID.bench);
+    out.splice(at+1,0,INCLINE[inclineVar(d)]);
+  }
   return out;
 }
 /* Rows shown for an exercise: the planned sets, plus any extra sets added or logged that day. */
@@ -793,7 +812,8 @@ function exHtml(ex,d,date){
   }
   h+='</div><div class="set-more">'
     +(rows<MAX_SETS?'<button class="ghost" data-act="set-add" data-ex="'+ex.id+'">+ סט נוסף</button>':'')
-    +(rows>ex.sets?'<button class="ghost" data-act="set-del" data-ex="'+ex.id+'">הסרת סט <bdi dir="ltr">'+rows+'</bdi></button>':'')+'</div>';
+    +(rows>ex.sets?'<button class="ghost" data-act="set-del" data-ex="'+ex.id+'">הסרת סט <bdi dir="ltr">'+rows+'</bdi></button>':'')
+    +(ex.incline&&date>=INCLINE_OPT&&!exDone(d,'incline_bb')&&!exDone(d,'incline_db')?'<button class="ghost" data-act="incline-remove">הסרת התרגיל מהיום</button>':'')+'</div>';
   return h+'</article>';
 }
 function workoutHtml(d,date){
@@ -806,8 +826,10 @@ function workoutHtml(d,date){
     +'<button data-act="timer-stop" aria-label="עצירת הטיימר"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="5" width="14" height="14" rx="2"/></svg></button>'
     +'<div class="track thin"><div class="fill k" id="timer-f"></div></div></div>';
   h+='<p class="hint">'+w.title+'</p>';
-  exList(d,date).forEach(function(ex){
+  var list=exList(d,date), inc=list.some(function(ex){ return ex.incline; });
+  list.forEach(function(ex){
     h+=exHtml(ex,d,date);
+    if(ex.id==='pecdeck'&&!inc) h+='<button class="add-ex" data-act="incline-add">+ הוספת בנצ׳ פרס בשיפוע חיובי</button>';
   });
   return h;
 }
@@ -1021,7 +1043,7 @@ function wIn(st,u){ return trim(st.u===u?st.raw:(u==='lb'?Math.round(st.top*2.20
 function repWord(ex){ return ex.kind==='time'?'שניות':'חזרות'; }
 function exProgress(ws){
   var we=addDays(ws,6), out={rows:[],up:0,cmp:0,ready:[],stalled:[],fresh:0}, order=[];
-  ['A','B','F'].forEach(function(k){ WORKOUTS[k].ex.forEach(function(e){ order.push(e); if(e.id==='bench'){ order.push(INCLINE.bb); order.push(INCLINE.db); } }); });
+  ['A','B','F'].forEach(function(k){ WORKOUTS[k].ex.forEach(function(e){ order.push(e); if(e.id==='pecdeck'){ order.push(INCLINE.bb); order.push(INCLINE.db); } }); });
   order.forEach(function(ex){
     var hist=exHistory(ex.id,we,4), cur=hist[0];
     if(!cur||cur.date<ws) return;
