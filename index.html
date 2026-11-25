@@ -335,6 +335,9 @@ var FOODS={
   porkrinds:{label:'פורק רינדס טחון לציפוי',g:30,kg:5.44,pg:0.61,note:'מה שנדבק לעוף'},
   coategg:{label:'ביצה לציפוי',k:72,p:6.3},
   mustard:{label:'חרדל (כף)',k:10,p:0.6},
+  cauliroast:{label:'פרחי כרובית בתנור',g:200,kg:0.25,pg:0.019,note:'משקל נא'},
+  eggplantroast:{label:'חציל בתנור',g:250,kg:0.25,pg:0.01,note:'משקל נא'},
+  eggplantgrill:{label:'חציל במנגל',g:250,kg:0.25,pg:0.01,note:'משקל נא'},
   cheddar:{label:'פרוסת צ׳דר',k:85,p:5},
   buche:{label:'פרוסת בושה',k:75,p:4.5},
   hardcheese:{label:'גבינה קשה אחרת (20 גרם)',k:75,p:5},
@@ -372,6 +375,7 @@ var DINNER_GROUPS=[
   {label:'נתחים על הגריל והמבורגרים',ids:['entrecote','sinta','burger','lambchop','asado']},
   {label:'קצוץ ומוקפצים – בוחרים בסיס ומוסיפים תוספות',ids:['groundbeef','pargitoil','seafoodbutter']},
   {label:'שניצל קטו – עוף, ציפוי, ושומן בקר (כמה כפות נספגו, לא כמה נשאר במחבת)',ids:['schnitzpargit','schnitzbreast','schnitzfillet','porkrinds','coategg','mustard','tallow']},
+  {label:'ירקות בתנור ובמנגל – את שמן הזית מוסיפים בכפות',ids:['cauliroast','eggplantroast','eggplantgrill','oliveoil']},
   {label:'תוספות – פטריות, גבינות, רטבים ושומן',ids:['mushrooms','parmesan','cheddar','buche','hardcheese','kapaosauce','friedegg','garlic','onion','jalapeno','tallow','oliveoil','butter20','bacon','avocado','salad']}
 ];
 /* Entries saved before items had quantities. */
@@ -963,7 +967,7 @@ function weighHtml(){
 
 /* ---------- weekly insights ---------- */
 var PLAN_WEEK={A:2,B:2,F:1};
-var VEG=['avocado','salad','mushrooms'];
+var VEG=['avocado','salad','mushrooms','cauliroast','eggplantroast','eggplantgrill'];
 var HABIT_SHORT={salt:'מי מלח',mag:'מגנזיום',creatine:'קריאטין'};
 function L(s){ return '<bdi dir="ltr">'+s+'</bdi>'; }
 function signed(x,dec){ var r=Number(Math.abs(x).toFixed(dec||0)); return (x>0&&r?'+':x<0&&r?'−':'')+(dec?r.toFixed(dec):num(r)); }
