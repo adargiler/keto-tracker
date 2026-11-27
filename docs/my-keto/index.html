@@ -129,6 +129,19 @@ bdi,[dir="ltr"]{unicode-bidi:isolate}
 .stp b{min-width:34px;text-align:center;font-size:18px;font-variant-numeric:tabular-nums}
 .picker{display:flex;flex-direction:column;gap:12px;padding:12px;border-radius:14px;border:1px solid var(--line)}
 .pk-h{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.eggb{display:flex;flex-direction:column;gap:10px;padding:12px;border-radius:14px;background:var(--raised)}
+.eggs4{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.eggc{display:flex;flex-direction:column;align-items:flex-start;gap:4px;padding:10px;border-radius:12px;background:var(--surface);border:1px solid var(--line);min-width:0}
+.eggc.on{border-color:var(--accent)}
+.eggc>b{font-size:15px;line-height:1.2}
+.eggc>small{font-size:11px;color:var(--muted)}
+.stp.sm button{width:40px;height:40px}
+.stp.sm b{min-width:30px;font-size:17px}
+.eggc .stp{align-self:stretch;justify-content:space-between}
+.chip.wide{width:100%;border-radius:14px;text-align:start}
+.chip.last:not([aria-pressed="true"]){border-style:dashed;border-color:var(--accent)}
+.fryq{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.todo{color:var(--warn);font-weight:700}
 .pk-tabs{display:flex;flex-wrap:wrap;gap:6px}
 .pk-tab{min-height:36px;padding:4px 12px;border-radius:999px;border:1px solid var(--line);background:none;font-size:13px;color:var(--muted)}
 .pk-tab[aria-pressed="true"]{background:var(--fg);border-color:var(--fg);color:var(--bg);font-weight:500}
@@ -318,8 +331,20 @@ var FOODS={
   sardines:{label:'סרדינים בשמן',sub:'קופסה מסוננת (כ־90 גרם)',k:190,p:22,c:0,grp:'fish',step:0.5},
   seafoodbutter:{label:'שרימפס / פירות ים בחמאה',sub:'מנה (כ־200 גרם)',k:280,p:38,c:1,grp:'fish',step:0.5},
   /* eggs and cheese */
-  egg:{label:'ביצה קשה',sub:'ביצה בגודל L',k:72,p:6.3,c:0.4,grp:'egg'},
-  eggfried:{label:'ביצת עין / חביתה',sub:'ביצה אחת, כולל מעט שמן או חמאה',k:95,p:6.3,c:0.4,grp:'egg'},
+  /* Eggs by style (size L). Fried styles count the egg only; the fat is chosen separately (FRY). */
+  egg:{label:'ביצה קשה',sub:'ביצה בגודל L',k:72,p:6.3,c:0.4,grp:'egg',egg:'קשה'},
+  eggsoft:{label:'ביצה רכה',sub:'ביצה בגודל L',k:72,p:6.3,c:0.4,grp:'egg',egg:'רכה'},
+  eggsunny:{label:'ביצת עין',sub:'ביצה אחת · השומן נבחר בנפרד',k:72,p:6.3,c:0.4,grp:'egg',egg:'עין',fry:true},
+  eggscrambled:{label:'חביתה / מקושקשת',sub:'לפי מספר הביצים · השומן נבחר בנפרד',k:72,p:6.3,c:0.4,grp:'egg',egg:'חביתה / מקושקשת',fry:true},
+  /* Before 2026-11-28 fried eggs included the fat; kept so days logged with it still add up. */
+  eggfried:{label:'ביצת עין / חביתה (כולל שמן)',sub:'ביצה אחת, כולל מעט שמן או חמאה',k:95,p:6.3,c:0.4,grp:'egg',hide:true},
+  /* Frying fats, in teaspoons absorbed (not what is left in the pan). Shown only in the eggs panel. */
+  fryoil:{label:'שמן זית לטיגון',short:'שמן זית',sub:'כפית (5 מ״ל)',k:40,p:0,c:0,grp:'fry',step:0.5},
+  frybutter:{label:'חמאה לטיגון',short:'חמאה',sub:'כפית (5 גרם)',k:36,p:0,c:0,grp:'fry',step:0.5},
+  frytallow:{label:'שומן בקר לטיגון',short:'שומן בקר',sub:'כפית',k:38,p:0,c:0,grp:'fry',step:0.5},
+  frycoconut:{label:'שמן קוקוס לטיגון',short:'שמן קוקוס',sub:'כפית',k:39,p:0,c:0,grp:'fry',step:0.5},
+  fryavocado:{label:'שמן אבוקדו לטיגון',short:'שמן אבוקדו',sub:'כפית (5 מ״ל)',k:40,p:0,c:0,grp:'fry',step:0.5},
+  fryspray:{label:'ספריי שמן לטיגון',short:'ספריי שמן',sub:'ריסוס קצר (כשנייה)',k:7,p:0,c:0,grp:'fry',unit:'ריסוסים'},
   goatgouda:{label:'גאודה עיזים',sub:'פרוסה (כ־20 גרם)',k:75,p:5,c:0.1,grp:'egg'},
   yellowcheese:{label:'גבינה צהובה',sub:'פרוסה (כ־20 גרם)',k:70,p:5,c:0.1,grp:'egg'},
   cheddar:{label:'צ׳דר',sub:'פרוסה (כ־20 גרם)',k:85,p:5,c:0.1,grp:'egg'},
@@ -387,6 +412,10 @@ var MEALS=[
   {id:'dessert',label:'קינוח',grp:'sweet',usual:[['brownie',1],['icecream',4],['darkchoc',2]]}
 ];
 var MEAL_LABEL={}; MEALS.forEach(function(m){ MEAL_LABEL[m.id]=m.label; });
+var EGG_STYLES=['egg','eggsoft','eggsunny','eggscrambled'];
+var FRY=['fryoil','frybutter','frytallow','frycoconut','fryavocado','fryspray'];
+/* Meals that always show the eggs panel; any other meal shows it once it has eggs in it. */
+var EGG_MEALS={lunch:1};
 var ACTS=[
   {label:'רוב היום בישיבה',sub:'עבודה או לימודים ליד שולחן, מעט הליכה',m:1.2},
   {label:'חלק מהיום על הרגליים',sub:'למשל עבודה בעמידה, הליכה יומית',m:1.375},
@@ -491,7 +520,7 @@ function usualFor(m,date){
   ks.forEach(function(k,i){
     var o=S.days[k].m[m.id]||{};
     Object.keys(o).forEach(function(id){
-      if(!food(id)||(S.custom[id]&&S.custom[id].h)) return;
+      if(!food(id)||food(id).hide||food(id).grp==='fry'||(S.custom[id]&&S.custom[id].h)) return;
       var s=st[id]||(st[id]={n:0,last:0,q:1});
       s.n++; s.last=i; s.q=o[id];
     });
@@ -568,7 +597,7 @@ function customFormHtml(meal){
 function pickIds(gid){
   return gid==='mine'
     ?Object.keys(S.custom).filter(function(id){ return !S.custom[id].h; })
-    :Object.keys(FOODS).filter(function(id){ return FOODS[id].grp===gid; });
+    :Object.keys(FOODS).filter(function(id){ return FOODS[id].grp===gid&&!FOODS[id].hide; });
 }
 /* One food group at a time (tabs); typing in the search box shows matches from every group instead. */
 function pickerHtml(meal,o){
@@ -601,12 +630,71 @@ function applyPickFilter(){
   });
   var none=$('.pk-none',pk); if(none) none.hidden=!q||found>0;
 }
+/* ---------- eggs panel: how many of each style, and the fat the fried ones were made in ---------- */
+function isEggOrFry(id){ return EGG_STYLES.indexOf(id)>=0||FRY.indexOf(id)>=0; }
+function hasEggPanel(mealId,o){ return !!EGG_MEALS[mealId]||Object.keys(o).some(isEggOrFry); }
+function friedCount(o){ return EGG_STYLES.reduce(function(n,id){ return n+(FOODS[id].fry&&o[id]?o[id]:0); },0); }
+function eggPart(o){ var r={}; Object.keys(o).forEach(function(id){ if(isEggOrFry(id)) r[id]=o[id]; }); return r; }
+/* The eggs last eaten in this meal (any other day, most recent first), else the meal's starting eggs. */
+function lastEggs(mealId,date){
+  var ks=Object.keys(S.days).filter(function(k){ return k!==date; }).sort().reverse();
+  for(var i=0;i<ks.length;i++){
+    var o=S.days[ks[i]].m[mealId]||{};
+    if(EGG_STYLES.some(function(id){ return o[id]; })) return eggPart(o);
+  }
+  var m=MEALS.filter(function(x){ return x.id===mealId; })[0], r={};
+  (m?m.usual:[]).forEach(function(u){ if(isEggOrFry(u[0])) r[u[0]]=u[1]; });
+  return Object.keys(r).length?r:null;
+}
+function lastFat(date){
+  var ks=Object.keys(S.days).filter(function(k){ return k<date; }).sort().reverse();
+  for(var i=0;i<ks.length;i++){
+    for(var j=0;j<MEALS.length;j++){ var o=S.days[ks[i]].m[MEALS[j].id]||{}; for(var f=0;f<FRY.length;f++) if(o[FRY[f]]) return FRY[f]; }
+  }
+  return null;
+}
+function fatUnit(id,q){ return FOODS[id].unit||(q===1?'כפית':'כפיות'); }
+function eggsDesc(e){
+  var parts=EGG_STYLES.filter(function(id){ return e[id]; }).map(function(id){ return FOODS[id].label+' '+L('×'+qtxt(e[id])); });
+  FRY.forEach(function(id){ if(e[id]) parts.push(FOODS[id].short+' '+L(qtxt(e[id]))+' '+fatUnit(id,e[id])); });
+  return parts.join(' · ');
+}
+function eggPanelHtml(mealId,o){
+  var eggs=EGG_STYLES.reduce(function(n,id){ return n+(o[id]||0); },0), fried=friedCount(o);
+  var fat=FRY.filter(function(id){ return o[id]; })[0]||null, t=mealTot(eggPart(o));
+  var h='<div class="eggb"><div class="card-h"><span class="lbl">ביצים – כמה ואיך</span>'+(eggs?'<span class="mt">'+L(num(t.k))+' קק״ל · '+L(num(t.p))+' ג׳ חלבון</span>':'')+'</div>';
+  if(!eggs){
+    var le=lastEggs(mealId,ui.date);
+    if(le) h+='<button class="chip add wide" data-act="eggsame" data-meal="'+mealId+'">+ '+eggsDesc(le)+'</button>';
+  }
+  h+='<div class="eggs4">'+EGG_STYLES.map(function(id){
+    var f=FOODS[id], n=o[id]||0;
+    return '<div class="eggc'+(n?' on':'')+'"><b>'+f.egg+'</b><small>'+(f.fry?'מטוגנת':'מבושלת, בלי שומן')+'</small>'
+      +'<div class="stp sm"><button data-act="egg" data-meal="'+mealId+'" data-id="'+id+'" data-v="-1" aria-label="ביצה '+f.egg+' אחת פחות"'+(n?'':' disabled')+'>−</button>'
+      +'<b>'+L(qtxt(n))+'</b>'
+      +'<button data-act="egg" data-meal="'+mealId+'" data-id="'+id+'" data-v="1" aria-label="עוד ביצה '+f.egg+'">+</button></div></div>';
+  }).join('')+'</div>';
+  if(fried||fat){
+    var prev=lastFat(ui.date);
+    h+='<div class="grp"><span class="lbl">טוגנו ב…'+(fried&&!fat?' <span class="todo">עוד לא נבחר</span>':'')+'</span><div class="chips">'
+      +FRY.map(function(id){ return '<button class="chip'+(id===prev&&!fat?' last':'')+'" data-act="fry" data-meal="'+mealId+'" data-id="'+id+'" aria-pressed="'+(id===fat)+'">'+FOODS[id].short+'</button>'; }).join('')+'</div>';
+    if(fat){
+      var q=o[fat], x=itemTot(fat,q);
+      h+='<div class="fryq"><span class="hint">כמה '+(FOODS[fat].unit?'ריסוסים':'כפיות')+' נספגו – לא מה שנשאר במחבת'+(FOODS[fat].unit?'':' (בערך כפית לביצה)')+' · '+L(num(x.k))+' קק״ל</span>'
+        +'<div class="stp sm"><button data-act="q" data-meal="'+mealId+'" data-id="'+fat+'" data-v="-1" aria-label="פחות '+esc(FOODS[fat].label)+'">−</button><b>'+L(qtxt(q))+'</b>'
+        +'<button data-act="q" data-meal="'+mealId+'" data-id="'+fat+'" data-v="1" aria-label="עוד '+esc(FOODS[fat].label)+'">+</button></div></div>';
+    }
+    h+='</div>';
+  }
+  return h+'</div>';
+}
 function mealHtml(m,d){
-  var o=(d&&d.m[m.id])||{}, ids=Object.keys(o), t=mealTot(o);
+  var o=(d&&d.m[m.id])||{}, ids=Object.keys(o), t=mealTot(o), panel=hasEggPanel(m.id,o);
   var h='<section class="card"><div class="card-h"><h3>'+m.label+'</h3>'
     +(ids.length?'<span class="mt">'+L(num(t.k))+' קק״ל · '+L(fmtC(t.c))+' ג׳ פחמ׳</span>':'')+'</div>';
-  ids.forEach(function(id){ h+=rowHtml(m.id,id,o[id]); });
-  var usual=usualFor(m,ui.date).filter(function(u){ return !o[u[0]]; });
+  if(panel) h+=eggPanelHtml(m.id,o);
+  ids.forEach(function(id){ if(!(panel&&isEggOrFry(id))) h+=rowHtml(m.id,id,o[id]); });
+  var usual=usualFor(m,ui.date).filter(function(u){ return !o[u[0]]&&!(panel&&isEggOrFry(u[0])); });
   if(usual.length) h+='<div class="chips">'+usual.map(function(u){
     var f=food(u[0]);
     return '<button class="chip add" data-act="add" data-meal="'+m.id+'" data-id="'+u[0]+'" data-q="'+u[1]+'">+ '+esc(f.label)+(u[1]!==1?' '+L('×'+qtxt(u[1])):'')+'</button>';
@@ -1021,6 +1109,26 @@ function onAct(el){
       render(); return;
     case 'q':
       editDay(ui.date,function(d){ var o=d.m[meal], f=food(id); if(!f||!o[id]) return; var q=clampQ(o[id]+(+v)*(f.step||1)); if(q<=0) delete o[id]; else o[id]=q; });
+      render(); return;
+    case 'egg':
+      editDay(ui.date,function(d){
+        var o=d.m[meal], n=(o[id]||0)+(+v);
+        if(n<=0) delete o[id]; else o[id]=clampQ(n);
+        if(!friedCount(o)) FRY.forEach(function(f){ delete o[f]; });
+      });
+      render(); return;
+    case 'fry':
+      editDay(ui.date,function(d){
+        var o=d.m[meal], cur=FRY.filter(function(f){ return o[f]; })[0];
+        if(cur===id){ delete o[id]; return; }
+        var def=FOODS[id].unit?2:Math.max(1,Math.min(3,friedCount(o)));
+        var q=cur&&!FOODS[cur].unit===!FOODS[id].unit?o[cur]:def;
+        FRY.forEach(function(f){ delete o[f]; });
+        o[id]=q;
+      });
+      render(); return;
+    case 'eggsame':
+      editDay(ui.date,function(d){ var le=lastEggs(meal,ui.date), o=d.m[meal]; if(le) Object.keys(le).forEach(function(k){ o[k]=le[k]; }); });
       render(); return;
     case 'pick': ui.pick=meal||null; ui.pickGrp=null; ui.pickQ=''; ui.newFood=null; render(); return;
     case 'pkgrp': ui.pickGrp=v; ui.pickQ=''; render(); return;
