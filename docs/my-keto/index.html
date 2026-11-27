@@ -129,12 +129,19 @@ bdi,[dir="ltr"]{unicode-bidi:isolate}
 .stp b{min-width:34px;text-align:center;font-size:18px;font-variant-numeric:tabular-nums}
 .picker{display:flex;flex-direction:column;gap:12px;padding:12px;border-radius:14px;border:1px solid var(--line)}
 .pk-h{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.pk-tabs{display:flex;flex-wrap:wrap;gap:6px}
+.pk-tab{min-height:36px;padding:4px 12px;border-radius:999px;border:1px solid var(--line);background:none;font-size:13px;color:var(--muted)}
+.pk-tab[aria-pressed="true"]{background:var(--fg);border-color:var(--fg);color:var(--bg);font-weight:500}
+.pk-gl{display:none}
+.picker.searching .pk-gl{display:block}
+.picker.searching .pk-tabs{display:none}
 .cform{display:flex;flex-direction:column;gap:10px;padding:12px;border-radius:14px;background:var(--raised)}
 .cf3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 
 /* inputs */
 label.f{display:flex;flex-direction:column;gap:4px;min-width:0}
-input[type="number"],input[type="text"],input[type="date"],textarea{
+input[type="search"]{-webkit-appearance:none;appearance:none}
+input[type="number"],input[type="text"],input[type="search"],input[type="date"],textarea{
   width:100%;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:8px 10px;font-size:16px;min-height:46px;min-width:0;
 }
 .cform input{background:var(--surface)}
@@ -279,48 +286,105 @@ var CHECK='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L
 function isStandalone(){ try{ return navigator.standalone===true||(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches); }catch(e){ return false; } }
 
 /* ---------- foods ----------
-   Values per portion: k = kcal, p = protein g, c = net carbs g (carbs minus fibre).
-   step = how much one tap of +/− changes (0.5 for main dishes). */
+   Values per portion: k = kcal, p = protein g, c = net carbs g (carbs minus fibre and sugar alcohols).
+   step = how much one tap of +/− changes (0.5 for main dishes). Ids are stored in saved days: never rename one.
+   Meat items share their per-gram figures with the strength tracker (index.html), as smaller portions. */
 var FOODS={
-  coffee:{label:'קפה עם שמנת 38%',sub:'רבע כוס שמנת (כ־60 מ״ל), בלי סוכר',k:210,p:1.3,c:1.9,grp:'drink'},
-  creamtbsp:{label:'שמנת מתוקה 38%',sub:'כף (15 מ״ל)',k:53,p:0.3,c:0.5,grp:'drink'},
+  /* meat and chicken */
+  burger:{label:'המבורגר קיטו',sub:'קציצה בלי לחמנייה (כ־150 גרם נא)',k:380,p:26,c:0,grp:'meat',step:0.5},
+  pargit:{label:'פרגית',sub:'יחידה (כ־110 גרם נא)',k:160,p:21,c:0,grp:'meat',step:0.5},
+  chickenbreast:{label:'חזה עוף',sub:'מנה (כ־150 גרם נא)',k:180,p:34,c:0,grp:'meat',step:0.5},
+  schnitzpargit:{label:'שניצל קטו – פרגית',sub:'יחידה: כ־100 גרם עוף נא בציפוי פורק רינדס וביצה, מטוגן',k:285,p:27,c:0.1,grp:'meat',step:0.5},
+  schnitzbreast:{label:'שניצל קטו – חזה עוף',sub:'יחידה: כ־100 גרם עוף נא בציפוי פורק רינדס וביצה, מטוגן',k:255,p:31,c:0.1,grp:'meat',step:0.5},
+  groundpargit:{label:'פרגית קצוצה',sub:'מנה (כ־150 גרם נא)',k:225,p:28.5,c:0,grp:'meat',step:0.5},
+  entrecote:{label:'סטייק אנטריקוט',sub:'מנה (כ־200 גרם נא)',k:580,p:36,c:0,grp:'meat',step:0.5},
+  sinta:{label:'סטייק סינטה',sub:'מנה (כ־200 גרם נא)',k:440,p:40,c:0,grp:'meat',step:0.5},
+  sintabone:{label:'סינטה על העצם מיושנת (דריי אייג׳)',sub:'מנה (כ־250 גרם נא עם העצם)',k:640,p:40,c:0,grp:'meat',step:0.5},
+  steakstrips:{label:'רצועות סטייק',sub:'100 גרם נא',k:200,p:21,c:0,grp:'meat',step:0.5},
+  groundbeef:{label:'בקר טחון',sub:'מנה (כ־150 גרם נא, כ־20% שומן)',k:380,p:25.5,c:0,grp:'meat',step:0.5},
+  groundmix:{label:'בקר טחון עם פטריות ופרמזן',sub:'מנה (כ־200 גרם)',k:585,p:39,c:2,grp:'meat',step:0.5},
+  padkrapow:{label:'פאד קפאו קטוגני + ביצת עין',sub:'מנה (כ־200 גרם)',k:535,p:40,c:3,grp:'meat',step:0.5},
+  asado:{label:'אסאדו / שפונדרה',sub:'מנה (כ־250 גרם עם העצם)',k:675,p:25,c:0,grp:'meat',step:0.5},
+  asadobites:{label:'חטיפי אסאדו',sub:'מנה (כ־150 גרם נא עם העצם)',k:405,p:15,c:0,grp:'meat',step:0.5},
+  asadoplancha:{label:'אסאדו על הפלנצ׳ה',sub:'100 גרם נא, בלי עצם',k:330,p:16,c:0,grp:'meat',step:0.5},
+  pulledasado:{label:'אסאדו מפורק',sub:'100 גרם',k:300,p:22,c:0,grp:'meat',step:0.5},
+  lambchop:{label:'צלע טלה',sub:'צלע אחת (כ־100 גרם עם העצם)',k:210,p:10.5,c:0,grp:'meat'},
+  bacon:{label:'רצועת בייקון בקר (רו בייקון)',sub:'רצועה אחת',k:60,p:2.5,c:0,grp:'meat'},
+  /* fish and seafood */
+  salmon:{label:'סלמון',sub:'נתח (כ־150 גרם נא)',k:310,p:30,c:0,grp:'fish',step:0.5},
+  whitefish:{label:'דג לבן (דניס, לברק, מושט)',sub:'פילה או דג קטן (כ־150 גרם נא, בלי עצמות)',k:180,p:30,c:0,grp:'fish',step:0.5},
+  smokedsalmon:{label:'סלמון מעושן',sub:'2–3 פרוסות (כ־50 גרם)',k:60,p:9,c:0,grp:'fish',step:0.5},
+  tuna:{label:'טונה בשמן',sub:'קופסה קטנה, מסוננת',k:180,p:19,c:0,grp:'fish',step:0.5},
+  sardines:{label:'סרדינים בשמן',sub:'קופסה מסוננת (כ־90 גרם)',k:190,p:22,c:0,grp:'fish',step:0.5},
+  seafoodbutter:{label:'שרימפס / פירות ים בחמאה',sub:'מנה (כ־200 גרם)',k:280,p:38,c:1,grp:'fish',step:0.5},
+  /* eggs and cheese */
   egg:{label:'ביצה קשה',sub:'ביצה בגודל L',k:72,p:6.3,c:0.4,grp:'egg'},
-  eggfried:{label:'ביצת עין / חביתה',sub:'ביצה אחת, כולל מעט שמן',k:95,p:6.3,c:0.4,grp:'egg'},
+  eggfried:{label:'ביצת עין / חביתה',sub:'ביצה אחת, כולל מעט שמן או חמאה',k:95,p:6.3,c:0.4,grp:'egg'},
   goatgouda:{label:'גאודה עיזים',sub:'פרוסה (כ־20 גרם)',k:75,p:5,c:0.1,grp:'egg'},
   yellowcheese:{label:'גבינה צהובה',sub:'פרוסה (כ־20 גרם)',k:70,p:5,c:0.1,grp:'egg'},
+  cheddar:{label:'צ׳דר',sub:'פרוסה (כ־20 גרם)',k:85,p:5,c:0.1,grp:'egg'},
+  buche:{label:'בושה (גבינת עיזים)',sub:'פרוסה (כ־20 גרם)',k:75,p:4.5,c:0.2,grp:'egg'},
+  hardcheese:{label:'גבינה קשה אחרת',sub:'20 גרם',k:75,p:5,c:0.1,grp:'egg'},
+  parmesan:{label:'פרמזן מגורד',sub:'כף',k:40,p:3.5,c:0.1,grp:'egg'},
+  feta:{label:'פטה / בולגרית',sub:'30 גרם',k:80,p:4.5,c:1,grp:'egg'},
+  mozzarella:{label:'מוצרלה',sub:'30 גרם',k:85,p:6,c:0.7,grp:'egg'},
+  creamcheese:{label:'גבינת שמנת',sub:'כף (כ־20 גרם)',k:68,p:1.2,c:0.8,grp:'egg'},
+  /* vegetables */
+  cauli:{label:'כרובית',sub:'מנה (כוס, כ־150 גרם)',k:38,p:2.9,c:4.5,grp:'veg',step:0.5},
+  broccoli:{label:'ברוקולי',sub:'מנה (כוס, כ־150 גרם)',k:51,p:4.2,c:6,grp:'veg',step:0.5},
+  eggplant:{label:'חציל בתנור / במנגל',sub:'חצי חציל (כ־150 גרם נא)',k:38,p:1.5,c:4.4,grp:'veg',step:0.5},
+  zucchini:{label:'קישוא',sub:'מנה (כ־150 גרם)',k:26,p:1.8,c:3.2,grp:'veg',step:0.5},
+  mushrooms:{label:'פטריות מוקפצות',sub:'מנה (כ־150 גרם), עם מעט שמן',k:80,p:3,c:3,grp:'veg',step:0.5},
+  salad:{label:'סלט ירקות',sub:'מלפפון, עגבנייה וחסה – קערה קטנה',k:25,p:1,c:4,grp:'veg',step:0.5},
+  cucumber:{label:'מלפפון',sub:'יחידה (כ־100 גרם)',k:15,p:0.7,c:3,grp:'veg',step:0.5},
+  tomato:{label:'עגבנייה',sub:'בינונית (כ־120 גרם)',k:22,p:1.1,c:3.3,grp:'veg',step:0.5},
+  avocado:{label:'אבוקדו',sub:'חצי אבוקדו',k:160,p:2,c:1.8,grp:'veg',step:0.5},
+  olives:{label:'זיתים',sub:'10 יחידות',k:58,p:0.4,c:0.6,grp:'veg',step:0.5},
+  onion:{label:'בצל',sub:'רבע בצל (כ־40 גרם)',k:16,p:0.5,c:3,grp:'veg'},
+  garlic:{label:'שום',sub:'שן',k:5,p:0.2,c:1,grp:'veg'},
+  jalapeno:{label:'חלפיניו',sub:'יחידה',k:5,p:0.1,c:0.5,grp:'veg'},
+  /* nuts, counted one by one */
   pecan:{label:'פקאן',sub:'חצי אגוז · חופן קטן ≈ 10 חצאים',k:10,p:0.13,c:0.06,grp:'nut'},
   brazil:{label:'אגוז ברזיל',sub:'אגוז אחד',k:33,p:0.7,c:0.2,grp:'nut',max:3,maxNote:'עדיף לא יותר מ־3 ביום – יש בהם הרבה סלניום'},
   almond:{label:'שקד',sub:'שקד אחד',k:7,p:0.25,c:0.1,grp:'nut'},
   walnut:{label:'אגוז מלך',sub:'חצי אגוז',k:13,p:0.3,c:0.14,grp:'nut'},
   macadamia:{label:'מקדמיה',sub:'אגוז אחד',k:19,p:0.2,c:0.14,grp:'nut'},
-  burger:{label:'המבורגר קיטו',sub:'קציצה בלי לחמנייה (כ־150 גרם נא)',k:380,p:26,c:0,grp:'meat',step:0.5},
-  pargit:{label:'פרגית',sub:'יחידה (כ־110 גרם נא)',k:160,p:21,c:0,grp:'meat',step:0.5},
-  entrecote:{label:'סטייק אנטריקוט',sub:'מנה (כ־200 גרם נא)',k:580,p:36,c:0,grp:'meat',step:0.5},
-  sinta:{label:'סטייק סינטה',sub:'מנה (כ־200 גרם נא)',k:440,p:40,c:0,grp:'meat',step:0.5},
-  tuna:{label:'טונה בשמן',sub:'קופסה קטנה, מסוננת',k:180,p:19,c:0,grp:'meat',step:0.5},
-  cauli:{label:'כרובית',sub:'מנה (כוס, כ־150 גרם)',k:38,p:2.9,c:4.5,grp:'veg',step:0.5},
-  broccoli:{label:'ברוקולי',sub:'מנה (כוס, כ־150 גרם)',k:51,p:4.2,c:6,grp:'veg',step:0.5},
-  salad:{label:'סלט ירקות',sub:'מלפפון, עגבנייה וחסה – קערה קטנה',k:25,p:1,c:4,grp:'veg',step:0.5},
-  avocado:{label:'אבוקדו',sub:'חצי אבוקדו',k:160,p:2,c:1.8,grp:'veg',step:0.5},
+  /* fats and sauces */
   oil:{label:'שמן זית',sub:'כף',k:120,p:0,c:0,grp:'fat',step:0.5},
   butter:{label:'חמאה',sub:'כף (14 גרם)',k:100,p:0.1,c:0,grp:'fat',step:0.5},
-  mayo:{label:'מיונז',sub:'כף',k:95,p:0.1,c:0.1,grp:'fat',step:0.5}
+  tallow:{label:'שומן בקר',sub:'כף',k:115,p:0,c:0,grp:'fat',step:0.5},
+  mayo:{label:'מיונז',sub:'כף',k:95,p:0.1,c:0.1,grp:'fat',step:0.5},
+  tahini:{label:'טחינה גולמית',sub:'כף (15 גרם)',k:89,p:2.6,c:1.8,grp:'fat',step:0.5},
+  mustard:{label:'חרדל',sub:'כף',k:10,p:0.6,c:0.5,grp:'fat',step:0.5},
+  /* desserts */
+  brownie:{label:'בראוניז קיטו (Keto Chef)',sub:'ריבוע 5×5 ס״מ (כ־35 גרם), מהתערובת עם חמאה וביצים',k:140,p:3.9,c:1.1,grp:'sweet',step:0.5,max:3,maxNote:'יש בו אריתריטול – כמות גדולה עלולה לגרום לאי־נוחות בבטן'},
+  icecream:{label:'גלידת חלבון קיטו (Less & More Pro)',sub:'כף (כ־15 גרם) · קופסה שלמה = 350 גרם',k:31.5,p:1.55,c:0.6,grp:'sweet'},
+  darkchoc:{label:'שוקולד מריר 85%',sub:'קובייה (כ־10 גרם)',k:58,p:1,c:2,grp:'sweet'},
+  berries:{label:'תותים / פירות יער',sub:'חצי כוס (כ־75 גרם)',k:30,p:0.7,c:4.2,grp:'sweet',step:0.5},
+  /* coffee and drinks */
+  coffee:{label:'קפה עם שמנת 38%',sub:'רבע כוס שמנת (כ־60 מ״ל), בלי סוכר',k:210,p:1.3,c:1.9,grp:'drink'},
+  creamtbsp:{label:'שמנת מתוקה 38%',sub:'כף (15 מ״ל) – לקפה או מוקצפת לקינוח',k:53,p:0.3,c:0.5,grp:'drink'},
+  proteinscoop:{label:'אבקת חלבון',sub:'סקופ (כ־30 גרם)',k:110,p:24,c:1.5,grp:'drink'}
 };
 var GROUPS=[
-  {id:'meat',label:'בשר, עוף ודגים'},
+  {id:'meat',label:'בשר ועוף'},
+  {id:'fish',label:'דגים'},
   {id:'egg',label:'ביצים וגבינות'},
-  {id:'nut',label:'אגוזים – לפי מספר'},
-  {id:'veg',label:'ירקות ואבוקדו'},
-  {id:'fat',label:'שמן, חמאה ורטבים'},
-  {id:'drink',label:'קפה ושמנת'},
-  {id:'mine',label:'המאכלים שלי'}
+  {id:'veg',label:'ירקות'},
+  {id:'nut',label:'אגוזים'},
+  {id:'fat',label:'שמן ורטבים'},
+  {id:'sweet',label:'קינוחים'},
+  {id:'drink',label:'קפה ושתייה'},
+  {id:'mine',label:'שלי'}
 ];
-/* usual = one-tap chips: [food id, quantity added by the first tap] */
+/* usual = starting one-tap chips [food id, quantity of the first tap], used until the person's own habits show up.
+   grp = the food group the picker opens on. */
 var MEALS=[
-  {id:'morning',label:'בוקר',usual:[['coffee',1]]},
-  {id:'lunch',label:'צהריים',usual:[['egg',3]]},
-  {id:'snack',label:'ביניים',usual:[['pecan',10],['brazil',2],['goatgouda',1]]},
-  {id:'dinner',label:'ערב',usual:[['burger',1],['pargit',2],['entrecote',1],['sinta',1],['cauli',1],['oil',1]]}
+  {id:'morning',label:'בוקר',grp:'drink',usual:[['coffee',1]]},
+  {id:'lunch',label:'צהריים',grp:'egg',usual:[['egg',3]]},
+  {id:'snack',label:'ביניים',grp:'nut',usual:[['pecan',10],['brazil',2],['goatgouda',1]]},
+  {id:'dinner',label:'ערב',grp:'meat',usual:[['burger',1],['pargit',2],['entrecote',1],['sinta',1],['cauli',1],['oil',1]]},
+  {id:'dessert',label:'קינוח',grp:'sweet',usual:[['brownie',1],['icecream',4],['darkchoc',2]]}
 ];
 var MEAL_LABEL={}; MEALS.forEach(function(m){ MEAL_LABEL[m.id]=m.label; });
 var ACTS=[
@@ -333,7 +397,7 @@ var ACTS=[
 var LS_KEY='my-keto-v1';
 function blankState(){ return {v:1,profile:null,targets:null,days:{},weights:{},custom:{},lastBackup:0,introSeen:false}; }
 var S=blankState();
-var ui={tab:'daily',date:todayStr(),pick:null,newFood:null,wPer:false,wMsg:'',wErr:false,delW:null,week:null,
+var ui={tab:'daily',date:todayStr(),pick:null,pickGrp:null,pickQ:'',newFood:null,wPer:false,wMsg:'',wErr:false,delW:null,week:null,
   su:null,suMsg:'',editProfile:false,bkMsg:'',bkErr:false,bkText:'',pendingImport:null,shareMsg:'',tMsg:''};
 var storageOk=true;
 
@@ -418,6 +482,26 @@ function prevLogged(date){
   return ks.length?ks[ks.length-1]:null;
 }
 function qtxt(q){ var w=Math.floor(q+1e-9), h=q-w>0.01; return (w?String(w):'')+(h?'½':'')||'0'; }
+/* One-tap chips learn from the last 30 logged days (other than the day shown): a food eaten in this meal
+   on at least 2 of them becomes a chip, most frequent first, offered in the amount last eaten.
+   Until 3 such foods exist, the meal's starting chips fill in. */
+function usualFor(m,date){
+  var ks=Object.keys(S.days).filter(function(k){ return k!==date&&dayLogged(S.days[k]); }).sort().slice(-30);
+  var st={};
+  ks.forEach(function(k,i){
+    var o=S.days[k].m[m.id]||{};
+    Object.keys(o).forEach(function(id){
+      if(!food(id)||(S.custom[id]&&S.custom[id].h)) return;
+      var s=st[id]||(st[id]={n:0,last:0,q:1});
+      s.n++; s.last=i; s.q=o[id];
+    });
+  });
+  var out=Object.keys(st).filter(function(id){ return st[id].n>=2; })
+    .sort(function(a,b){ return st[b].n-st[a].n||st[b].last-st[a].last; })
+    .slice(0,6).map(function(id){ return [id,st[id].q]; });
+  if(out.length<3) m.usual.forEach(function(u){ if(out.length<6&&!out.some(function(x){ return x[0]===u[0]; })) out.push(u); });
+  return out;
+}
 
 /* ---------- weigh-ins ---------- */
 function entries(){ return Object.keys(S.weights).filter(isDate).sort().map(function(k){ return {date:k,kg:S.weights[k].kg,per:!!S.weights[k].per}; }); }
@@ -481,30 +565,51 @@ function customFormHtml(meal){
     +'<div class="row-btns"><button class="btn" data-act="savefood" data-meal="'+meal+'">שמירה והוספה</button><button class="btn alt" data-act="newfood" data-meal="">ביטול</button></div>'
     +'</div>';
 }
+function pickIds(gid){
+  return gid==='mine'
+    ?Object.keys(S.custom).filter(function(id){ return !S.custom[id].h; })
+    :Object.keys(FOODS).filter(function(id){ return FOODS[id].grp===gid; });
+}
+/* One food group at a time (tabs); typing in the search box shows matches from every group instead. */
 function pickerHtml(meal,o){
-  var h='<div class="picker"><div class="pk-h"><span class="lbl">הוספה ל'+MEAL_LABEL[meal]+' – כל לחיצה מוסיפה מנה</span><button class="link" data-act="pick" data-meal="">סגירה</button></div>';
-  GROUPS.forEach(function(g){
-    var ids=g.id==='mine'
-      ?Object.keys(S.custom).filter(function(id){ return !S.custom[id].h; })
-      :Object.keys(FOODS).filter(function(id){ return FOODS[id].grp===g.id; });
-    if(!ids.length) return;
-    h+='<div class="grp"><span class="lbl">'+g.label+'</span><div class="chips">'+ids.map(function(id){
+  var m=MEALS.filter(function(x){ return x.id===meal; })[0];
+  var groups=GROUPS.filter(function(g){ return pickIds(g.id).length; });
+  var cur=ui.pickGrp||m.grp;
+  if(!groups.some(function(g){ return g.id===cur; })) cur=groups[0].id;
+  var h='<div class="picker" data-cur="'+cur+'"><div class="pk-h"><span class="lbl">הוספה ל'+MEAL_LABEL[meal]+' – כל לחיצה מוסיפה מנה</span><button class="link" data-act="pick" data-meal="">סגירה</button></div>'
+    +'<input type="search" id="pk-q" placeholder="חיפוש מאכל…" autocomplete="off" enterkeyhint="search" value="'+esc(ui.pickQ)+'" aria-label="חיפוש מאכל">'
+    +'<div class="pk-tabs">'+groups.map(function(g){ return '<button class="pk-tab" data-act="pkgrp" data-v="'+g.id+'" aria-pressed="'+(g.id===cur)+'">'+g.label+'</button>'; }).join('')+'</div>';
+  groups.forEach(function(g){
+    h+='<div class="grp pk-g" data-g="'+g.id+'"'+(g.id===cur?'':' hidden')+'><span class="lbl pk-gl">'+g.label+'</span><div class="chips">'+pickIds(g.id).map(function(id){
       var f=food(id), on=!!o[id];
-      return '<button class="chip" data-act="add" data-meal="'+meal+'" data-id="'+id+'" data-q="1" aria-pressed="'+on+'">'+esc(f.label)+(f.sub?'<small>'+esc(f.sub)+'</small>':'')+'</button>';
+      return '<button class="chip" data-act="add" data-meal="'+meal+'" data-id="'+id+'" data-q="1" data-s="'+esc((f.label+' '+(f.sub||'')).toLowerCase())+'" aria-pressed="'+on+'">'+esc(f.label)+(f.sub?'<small>'+esc(f.sub)+'</small>':'')+'</button>';
     }).join('')+'</div></div>';
   });
+  h+='<p class="hint pk-none" hidden>לא נמצא ברשימה – אפשר להוסיף אותו כמאכל חדש.</p>';
   h+=ui.newFood===meal?customFormHtml(meal):'<button class="more" data-act="newfood" data-meal="'+meal+'">+ מאכל חדש שלא ברשימה</button>';
   return h+'</div>';
+}
+function applyPickFilter(){
+  var pk=$('.picker'); if(!pk) return;
+  var q=(ui.pickQ||'').trim().toLowerCase(), found=0;
+  pk.classList.toggle('searching',!!q);
+  pk.querySelectorAll('.pk-g').forEach(function(g){
+    var n=0;
+    g.querySelectorAll('.chip').forEach(function(c){ var ok=!q||c.dataset.s.indexOf(q)>=0; c.hidden=!ok; if(ok) n++; });
+    g.hidden=q?n===0:g.dataset.g!==pk.dataset.cur;
+    if(q) found+=n;
+  });
+  var none=$('.pk-none',pk); if(none) none.hidden=!q||found>0;
 }
 function mealHtml(m,d){
   var o=(d&&d.m[m.id])||{}, ids=Object.keys(o), t=mealTot(o);
   var h='<section class="card"><div class="card-h"><h3>'+m.label+'</h3>'
     +(ids.length?'<span class="mt">'+L(num(t.k))+' קק״ל · '+L(fmtC(t.c))+' ג׳ פחמ׳</span>':'')+'</div>';
   ids.forEach(function(id){ h+=rowHtml(m.id,id,o[id]); });
-  var usual=m.usual.filter(function(u){ return !o[u[0]]; });
+  var usual=usualFor(m,ui.date).filter(function(u){ return !o[u[0]]; });
   if(usual.length) h+='<div class="chips">'+usual.map(function(u){
-    var f=FOODS[u[0]];
-    return '<button class="chip add" data-act="add" data-meal="'+m.id+'" data-id="'+u[0]+'" data-q="'+u[1]+'">+ '+esc(f.label)+(u[1]>1?' '+L('×'+u[1]):'')+'</button>';
+    var f=food(u[0]);
+    return '<button class="chip add" data-act="add" data-meal="'+m.id+'" data-id="'+u[0]+'" data-q="'+u[1]+'">+ '+esc(f.label)+(u[1]!==1?' '+L('×'+qtxt(u[1])):'')+'</button>';
   }).join('')+'</div>';
   h+=ui.pick===m.id?pickerHtml(m.id,o):'<button class="more" data-act="pick" data-meal="'+m.id+'">+ מאכל אחר</button>';
   return h+'</section>';
@@ -516,7 +621,7 @@ function dailyHtml(){
     h+='<section class="card soft"><h3>היעדים היומיים</h3>'
       +'<p class="note">'+L(T.c)+' ג׳ פחמימות נטו לכל היותר · כ־'+L(num(T.k))+' קלוריות · '+L(T.p)+' ג׳ חלבון. '
       +'הם חושבו לפי הפרטים ששמרת, לירידה מתונה של כ־0.3–0.5 ק״ג בשבוע. אפשר לשנות אותם בהגדרות.</p>'
-      +'<p class="note">רושמים מה אכלת בלחיצות על המאכלים. ביום שאוכלים כמו אתמול – כפתור אחד מעתיק את כל היום.</p>'
+      +'<p class="note">רושמים מה אכלת בלחיצות על המאכלים. הכפתורים המהירים בכל ארוחה לומדים מה אוכלים הכי הרבה, וביום שאוכלים כמו אתמול – כפתור אחד מעתיק את כל היום.</p>'
       +'<button class="btn" data-act="intro-ok">הבנתי, מתחילים</button></section>';
   }
   if(ui.date===t&&fromYmd(t).getDay()===1&&!S.weights[t]){
@@ -893,6 +998,7 @@ function render(){
   if(!S.profile){ tabs.hidden=true; v.innerHTML=setupHtml(false); return; }
   tabs.hidden=false;
   v.innerHTML=ui.tab==='weigh'?weighHtml():ui.tab==='week'?weekHtml():ui.tab==='settings'?settingsHtml():dailyHtml();
+  applyPickFilter();
   document.querySelectorAll('.tab').forEach(function(b){ var on=b.dataset.v===ui.tab; b.classList.toggle('is-on',on); if(on) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current'); });
 }
 
@@ -901,7 +1007,7 @@ function onAct(el){
   var act=el.dataset.act, v=el.dataset.v, meal=el.dataset.meal, id=el.dataset.id, t=todayStr();
   switch(act){
     case 'tab':
-      ui.tab=v; ui.pick=null; ui.newFood=null; ui.delW=null; ui.editProfile=false; ui.su=null; ui.suMsg='';
+      ui.tab=v; ui.pick=null; ui.pickGrp=null; ui.pickQ=''; ui.newFood=null; ui.delW=null; ui.editProfile=false; ui.su=null; ui.suMsg='';
       ui.wMsg=''; ui.bkMsg=''; ui.shareMsg=''; ui.tMsg=''; ui.week=null;
       render(); window.scrollTo(0,0); return;
     case 'day':
@@ -916,7 +1022,8 @@ function onAct(el){
     case 'q':
       editDay(ui.date,function(d){ var o=d.m[meal], f=food(id); if(!f||!o[id]) return; var q=clampQ(o[id]+(+v)*(f.step||1)); if(q<=0) delete o[id]; else o[id]=q; });
       render(); return;
-    case 'pick': ui.pick=meal||null; ui.newFood=null; render(); return;
+    case 'pick': ui.pick=meal||null; ui.pickGrp=null; ui.pickQ=''; ui.newFood=null; render(); return;
+    case 'pkgrp': ui.pickGrp=v; ui.pickQ=''; render(); return;
     case 'newfood': ui.newFood=meal||null; render(); if(meal){ var n=$('#cf-name'); if(n) n.focus(); } return;
     case 'savefood':
       var name=($('#cf-name').value||'').trim(), k=toNum($('#cf-k').value), c=toNum($('#cf-c').value), p=toNum($('#cf-p').value);
@@ -997,10 +1104,14 @@ document.addEventListener('change',function(e){
     r.readAsText(el.files[0]);
   }
 });
+document.addEventListener('input',function(e){
+  if(e.target&&e.target.id==='pk-q'){ ui.pickQ=e.target.value; applyPickFilter(); }
+});
 document.addEventListener('keydown',function(e){
   if(e.key!=='Enter'||!e.target||e.target.tagName!=='INPUT') return;
   var id=e.target.id;
-  if(id==='w-kg'){ e.preventDefault(); onAct($('[data-act="wsave"]')); }
+  if(id==='pk-q'){ e.preventDefault(); e.target.blur(); }
+  else if(id==='w-kg'){ e.preventDefault(); onAct($('[data-act="wsave"]')); }
   else if(/^cf-/.test(id)){ e.preventDefault(); var b=$('[data-act="savefood"]'); if(b) onAct(b); }
 });
 var lastToday=todayStr();
