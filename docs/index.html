@@ -351,6 +351,9 @@ var FOODS={
   porkrinds:{label:'פורק רינדס טחון לציפוי',g:30,kg:5.44,pg:0.61,note:'מה שנדבק לעוף'},
   coategg:{label:'ביצה לציפוי',k:72,p:6.3},
   mustard:{label:'חרדל (כף)',k:10,p:0.6},
+  sintabone:{label:'סינטה על העצם מיושנת (דריי אייג׳)',g:500,kg:2.55,pg:0.16,note:'משקל נא עם העצם'},
+  asadobites:{label:'חטיפי אסאדו',g:300,kg:2.7,pg:0.1,note:'משקל נא עם העצם'},
+  proteinicecream:{label:'גלידת חלבון קיטוגנית (Less & More Pro)',g:100,kg:2.1,pg:0.103,note:'קופסה שלמה = 350 גרם'},
   cauliroast:{label:'פרחי כרובית בתנור',g:200,kg:0.25,pg:0.019,note:'משקל נא'},
   eggplantroast:{label:'חציל בתנור',g:250,kg:0.25,pg:0.01,note:'משקל נא'},
   eggplantgrill:{label:'חציל במנגל',g:250,kg:0.25,pg:0.01,note:'משקל נא'},
@@ -378,7 +381,7 @@ var FOODS={
   macadamia:{label:'מקדמיה',k:19,p:0.2,cnt:true},
   brazil:{label:'אגוז ברזיל',k:33,p:0.7,cnt:true}
 };
-var SNACK_GROUPS=[{label:'אגוזים – לפי מספר',ids:['pecan','macadamia','brazil']}];
+var SNACK_GROUPS=[{label:'אגוזים – לפי מספר',ids:['pecan','macadamia','brazil']},{label:'גלידה – לפי משקל',ids:['proteinicecream']}];
 var MEALS_ITEMS={lunch:1,dinner:1,snack:1};
 var FATS=['tallow','oliveoil','butter20'];
 /* Any of these in a meal counts as a frying fat already logged (butter / eggbutter are older entries). */
@@ -388,7 +391,7 @@ var LUNCH_GROUPS=[
   {label:'תוספת חלבון – רק כשמתחשק',ids:['steakstrips','asadoplancha','bacon','pulledasado','cheddar','buche','hardcheese','tuna']}
 ];
 var DINNER_GROUPS=[
-  {label:'נתחים על הגריל והמבורגרים',ids:['entrecote','sinta','burger','lambchop','asado']},
+  {label:'נתחים על הגריל והמבורגרים',ids:['entrecote','sinta','sintabone','burger','lambchop','asado','asadobites']},
   {label:'קצוץ ומוקפצים – בוחרים בסיס ומוסיפים תוספות',ids:['groundbeef','pargitoil','seafoodbutter']},
   {label:'שניצל קטו – עוף, ציפוי, ושומן בקר (כמה כפות נספגו, לא כמה נשאר במחבת)',ids:['schnitzpargit','schnitzbreast','schnitzfillet','porkrinds','coategg','mustard','tallow']},
   {label:'ירקות בתנור ובמנגל – את שמן הזית מוסיפים בכפות',ids:['cauliroast','eggplantroast','eggplantgrill','oliveoil']},
