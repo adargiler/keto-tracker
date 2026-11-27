@@ -84,7 +84,8 @@ self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
 });
 self.addEventListener('activate', e => {
-  e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim()));
+  /* Only this app's old caches: the separate app in my-keto/ on the same site keeps its own. */
+  e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k.startsWith('keto-') && k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim()));
 });
 function store(req, res) {
   if (res && (res.ok || res.type === 'opaque')) { const copy = res.clone(); caches.open(CACHE).then(c => c.put(req, copy)); }

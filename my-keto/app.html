@@ -1,0 +1,1020 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>הקיטו שלי</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="הקיטו שלי">
+<meta name="theme-color" content="#f7f3ec" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#141311" media="(prefers-color-scheme: dark)">
+<meta name="robots" content="noindex,nofollow">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800&display=swap">
+<style>
+/* One phone-width column of soft cards, fixed bottom tabs. Net carbs lead; calories and protein follow. */
+:root{
+  --bg:#f7f3ec; --surface:#fffdf9; --raised:#f0e9df; --line:#e3d9cb;
+  --fg:#2a2521; --muted:#73685d; --faint:#a59a8d;
+  --accent:#4c7a44; --accent-ink:#ffffff; --accent-soft:#e4eedd;
+  --carb:#4c7a44; --kcal:#d39526; --prot:#c25a3a;
+  --ok:#3d8a4c; --warn:#a8700c; --bad:#bf462e;
+  --font:'Heebo',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+  --r:18px;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#141311; --surface:#1e1c19; --raised:#2a2722; --line:#3b362e;
+    --fg:#f2ede5; --muted:#aba192; --faint:#7a7165;
+    --accent:#93bf7f; --accent-ink:#13200f; --accent-soft:#24311e;
+    --carb:#93bf7f; --kcal:#e8b24a; --prot:#e9805f;
+    --ok:#8acb8d; --warn:#e8b24a; --bad:#ef7a62;
+    color-scheme:dark;
+  }
+}
+*{box-sizing:border-box}
+html,body{background:var(--bg)}
+body{
+  margin:0;color:var(--fg);font-family:var(--font);font-size:15px;line-height:1.5;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  -webkit-text-size-adjust:100%;-webkit-tap-highlight-color:transparent;
+}
+[hidden]{display:none!important}
+button,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+button:disabled{opacity:.35;cursor:default}
+h1,h2,h3,p{margin:0}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+bdi,[dir="ltr"]{unicode-bidi:isolate}
+#app{max-width:560px;margin-inline:auto;padding-bottom:calc(96px + env(safe-area-inset-bottom,0px))}
+#view{display:flex;flex-direction:column;gap:12px}
+
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-block:12px 6px}
+.brand{font-size:22px;font-weight:800;letter-spacing:-.01em}
+.brand span{color:var(--accent)}
+.warn-bar{margin-bottom:10px;padding:10px 12px;border-radius:12px;background:var(--bad);color:#fff;font-size:13px}
+
+/* day navigation */
+.nav{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.nav-t{flex:1;min-width:0;text-align:center}
+.nav-t h2{font-size:17px;font-weight:700}
+.nav-t button{margin-top:2px;background:none;border:0;color:var(--accent);font-size:13px;padding:2px 8px;min-height:28px}
+.ico{flex:none;width:44px;height:44px;display:grid;place-items:center;border-radius:12px;border:1px solid var(--line);background:var(--surface)}
+.ico svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+/* cards */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:12px}
+.card-h{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.card-h h3{font-size:17px;font-weight:700}
+.hint{font-size:12px;color:var(--muted)}
+.mt{font-size:12px;color:var(--muted);white-space:nowrap}
+.lbl{font-size:12px;color:var(--muted)}
+.grp{display:flex;flex-direction:column;gap:6px}
+.note{font-size:13px;color:var(--muted);line-height:1.55}
+.card.soft{background:var(--accent-soft);border-color:transparent}
+.card.soft h3{color:var(--fg)}
+
+/* daily meters */
+.meters{display:flex;flex-direction:column;gap:12px}
+.meter{display:flex;flex-direction:column;gap:5px}
+.meter-h{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.meter-n{display:flex;align-items:baseline;gap:5px;font-variant-numeric:tabular-nums}
+.meter-n b{font-size:26px;line-height:1;font-weight:800}
+.meter-n i{font-style:normal;color:var(--muted);font-size:14px}
+.meter.main .meter-n b{font-size:40px}
+.meter-s{font-size:12px;color:var(--muted)}
+.meter-s.ok{color:var(--ok)} .meter-s.warn{color:var(--warn)} .meter-s.bad{color:var(--bad);font-weight:700}
+.track{height:8px;border-radius:999px;background:var(--raised);overflow:hidden}
+.meter.main .track{height:12px}
+.fill{height:100%;border-radius:999px;transition:width .3s ease}
+.fill.c{background:var(--carb)} .fill.c.warn{background:var(--kcal)} .fill.c.bad{background:var(--bad)}
+.fill.k{background:var(--kcal)} .fill.p{background:var(--prot)}
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:14px;border-top:1px solid var(--line);padding-top:12px}
+.duo .meter-h{flex-direction:column;align-items:flex-start;gap:0}
+.duo .meter-n b{font-size:24px}
+.meter-n{white-space:nowrap}
+
+/* chips and buttons */
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{min-height:44px;padding:8px 14px;border-radius:999px;border:1px solid var(--line);background:var(--raised);font-weight:500;text-align:center;line-height:1.25}
+.chip small{display:block;font-size:11px;font-weight:400;color:var(--muted)}
+.chip.add{border-style:dashed;border-color:var(--accent);background:none;color:var(--fg)}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.chip[aria-pressed="true"] small{color:var(--accent-ink);opacity:.85}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.stack{display:flex;flex-direction:column;gap:8px}
+.stack .chip{border-radius:14px;text-align:start;padding:10px 14px}
+.btn{min-height:48px;padding:12px 16px;border-radius:14px;border:0;background:var(--accent);color:var(--accent-ink);font-weight:700;display:block;text-align:center;width:100%;line-height:1.35}
+.btn .hint{display:block;margin-top:2px;font-weight:400}
+.btn.alt{background:var(--raised);color:var(--fg);border:1px solid var(--line);font-weight:500}
+.more{min-height:44px;border-radius:12px;border:1px dashed var(--line);background:none;color:var(--accent);font-size:14px;font-weight:500;padding:8px 12px;text-align:center}
+.link{background:none;border:0;color:var(--accent);font-size:13px;padding:6px 4px;min-height:36px}
+.row-btns{display:flex;flex-wrap:wrap;gap:8px}
+.row-btns>*{flex:1 1 140px;width:auto}
+
+/* food rows */
+.frow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 10px;align-items:center;padding:10px 12px;border-radius:14px;background:var(--raised)}
+.fname{font-weight:500;min-width:0;line-height:1.35}
+.fname small{display:block;font-size:12px;color:var(--muted);font-weight:400}
+.fname .fx{font-variant-numeric:tabular-nums}
+.fwarn{display:block;font-size:12px;color:var(--warn);font-weight:500;margin-top:2px}
+.stp{display:inline-flex;align-items:center;gap:2px}
+.stp button{width:44px;height:44px;border-radius:12px;border:1px solid var(--line);background:var(--surface);font-size:20px;line-height:1}
+.stp b{min-width:34px;text-align:center;font-size:18px;font-variant-numeric:tabular-nums}
+.picker{display:flex;flex-direction:column;gap:12px;padding:12px;border-radius:14px;border:1px solid var(--line)}
+.pk-h{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.cform{display:flex;flex-direction:column;gap:10px;padding:12px;border-radius:14px;background:var(--raised)}
+.cf3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+
+/* inputs */
+label.f{display:flex;flex-direction:column;gap:4px;min-width:0}
+input[type="number"],input[type="text"],input[type="date"],textarea{
+  width:100%;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:8px 10px;font-size:16px;min-height:46px;min-width:0;
+}
+.cform input{background:var(--surface)}
+input[type="number"]{direction:ltr;text-align:center;font-variant-numeric:tabular-nums;-moz-appearance:textfield;appearance:textfield}
+input[type="number"]::-webkit-outer-spin-button,input[type="number"]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+input[type="date"]{direction:ltr;text-align:center;-webkit-appearance:none;appearance:none}
+input::placeholder,textarea::placeholder{color:var(--faint)}
+textarea{resize:vertical;min-height:90px;font-size:13px}
+.form2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.msg{font-size:13px;color:var(--muted)}
+.msg.err{color:var(--bad)}
+.msg:empty{display:none}
+
+/* checkbox row */
+.check{display:flex;align-items:center;gap:12px;min-height:52px;padding:8px 12px;border-radius:14px;border:1px solid var(--line);background:var(--raised);text-align:start;width:100%}
+.check .box{flex:none;width:24px;height:24px;border-radius:7px;border:2px solid var(--faint);display:grid;place-items:center}
+.check .box svg{width:14px;height:14px;stroke:var(--accent-ink);fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;opacity:0}
+.check[aria-pressed="true"]{border-color:var(--accent)}
+.check[aria-pressed="true"] .box{background:var(--accent);border-color:var(--accent)}
+.check[aria-pressed="true"] .box svg{opacity:1}
+.check .t{flex:1;min-width:0;line-height:1.35}
+.check small{display:block;font-size:12px;color:var(--muted)}
+
+/* weigh-ins */
+.big{display:flex;align-items:baseline;gap:6px}
+.big b{font-size:52px;line-height:.95;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.big span{color:var(--muted)}
+.deltas{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.deltas div{background:var(--raised);border-radius:12px;padding:8px 10px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.deltas span{font-size:11px;color:var(--muted);line-height:1.3}
+.deltas b{font-size:17px;font-variant-numeric:tabular-nums}
+.deltas b.down{color:var(--ok)} .deltas b.up{color:var(--bad)}
+.goalbar{display:flex;flex-direction:column;gap:5px}
+.goalbar .fill{background:var(--accent)}
+.status{padding:10px 12px;border-radius:12px;background:var(--accent-soft);font-size:14px;line-height:1.55}
+.chart{width:100%;height:auto;display:block;direction:ltr}
+.wlist{display:flex;flex-direction:column}
+.wrow{display:grid;grid-template-columns:minmax(0,1fr) auto auto auto;gap:8px;align-items:center;padding-block:8px;border-top:1px solid var(--line);font-variant-numeric:tabular-nums}
+.wrow:first-child{border-top:0}
+.wrow .d{font-size:14px}
+.wrow .d small{display:block;font-size:12px;color:var(--muted)}
+.wrow .kg{font-weight:700;font-size:16px}
+.wrow .dl{font-size:13px;color:var(--muted);min-width:42px;text-align:center}
+.tagbtn{min-height:36px;padding:2px 10px;border-radius:999px;border:1px solid var(--line);background:none;font-size:12px;color:var(--muted)}
+.tagbtn[aria-pressed="true"]{background:var(--prot);border-color:var(--prot);color:#fff}
+.tagbtn.del{color:var(--bad)}
+.tips{margin:0;padding-inline-start:18px;display:flex;flex-direction:column;gap:6px;font-size:14px}
+details summary{cursor:pointer;color:var(--accent);font-size:14px;font-weight:500;min-height:32px;list-style-position:inside}
+details[open] summary{margin-bottom:8px}
+
+/* weekly */
+.wknav{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.wknav h2{font-size:17px;font-weight:700;text-align:center;flex:1}
+.avg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.avg div{background:var(--raised);border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.avg b{font-size:22px;font-weight:800;line-height:1.1;font-variant-numeric:tabular-nums}
+.avg span{font-size:11px;color:var(--muted)}
+.wk{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:14px}
+.wk th{font-size:11px;font-weight:500;color:var(--muted);padding:4px 2px 6px;text-align:center}
+.wk td{padding:8px 2px;text-align:center;border-top:1px solid var(--line)}
+.wk td:first-child,.wk th:first-child{text-align:start}
+.wk .dayb{background:none;border:0;padding:4px 0;min-height:36px;text-align:start}
+.wk .dayb small{color:var(--muted);font-size:12px;margin-inline-start:4px}
+.wk .over{color:var(--bad);font-weight:700}
+.wk .na{color:var(--faint)}
+.preview{white-space:pre-wrap;font-size:13px;line-height:1.6;background:var(--raised);border-radius:12px;padding:10px 12px;margin:0;font-family:var(--font)}
+.ins{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.ins li{position:relative;padding-inline-start:16px;font-size:14px;line-height:1.5}
+.ins li::before{content:"";position:absolute;inset-inline-start:0;top:.55em;width:8px;height:8px;border-radius:50%;background:var(--faint)}
+.ins li.ok::before{background:var(--ok)} .ins li.warn::before{background:var(--kcal)}
+
+/* settings */
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:14px}
+.kv span{color:var(--muted)}
+.tgt{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.mine{display:flex;flex-direction:column}
+.mine div{display:flex;align-items:center;justify-content:space-between;gap:8px;padding-block:6px;border-top:1px solid var(--line);font-size:14px}
+.mine div:first-child{border-top:0}
+
+/* setup */
+.hero{padding:8px 2px 4px;display:flex;flex-direction:column;gap:6px}
+.hero h1{font-size:28px;font-weight:800}
+.install{border-color:var(--kcal)}
+.install ol{margin:0;padding-inline-start:20px;display:flex;flex-direction:column;gap:4px;font-size:14px}
+
+/* bottom tabs */
+.tabs{position:fixed;inset:auto 0 0 0;z-index:9;background:var(--surface);border-top:1px solid var(--line);
+  padding:6px max(12px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px))}
+.tabs-in{max-width:560px;margin-inline:auto;display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+.tab{display:flex;flex-direction:column;align-items:center;gap:2px;min-height:52px;padding:6px 2px;border:0;border-radius:12px;background:none;color:var(--muted);font-size:12px}
+.tab svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.tab.is-on{color:var(--accent);background:var(--raised);font-weight:700}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="top"><div class="brand">הקיטו <span>שלי</span></div></header>
+  <div class="warn-bar" id="store-warn" hidden>אי אפשר לשמור נתונים בטלפון הזה כרגע (אולי זו גלישה פרטית). מה שיירשם עכשיו לא יישמר.</div>
+  <main id="view"><p class="note">טוען…</p></main>
+  <nav class="tabs" id="tabs" aria-label="ניווט ראשי" hidden>
+    <div class="tabs-in">
+      <button class="tab" data-act="tab" data-v="daily"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14v17H5z"/><path d="M9 9h6M9 13h6M9 17h3"/></svg>יומן</button>
+      <button class="tab" data-act="tab" data-v="weigh"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8.5 9.5a5 5 0 0 1 7 0M12 9v2.5"/></svg>שקילה</button>
+      <button class="tab" data-act="tab" data-v="week"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M21 20H3"/></svg>סיכום</button>
+      <button class="tab" data-act="tab" data-v="settings"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/></svg>הגדרות</button>
+    </div>
+  </nav>
+</div>
+<noscript>האפליקציה צריכה JavaScript כדי לעבוד.</noscript>
+
+<script>
+(function(){
+'use strict';
+
+/* ---------- helpers ---------- */
+var $=function(s,r){ return (r||document).querySelector(s); };
+var ESC={'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'};
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){ return ESC[c]; }); }
+function pad(n){ return String(n).padStart(2,'0'); }
+function ymd(d){ return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
+function fromYmd(s){ var a=s.split('-').map(Number); return new Date(a[0],a[1]-1,a[2]); }
+function addDays(s,n){ var d=fromYmd(s); d.setDate(d.getDate()+n); return ymd(d); }
+function todayStr(){ return ymd(new Date()); }
+function isDate(s){ return typeof s==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(s); }
+function daysBetween(a,b){ return Math.round((fromYmd(b)-fromYmd(a))/864e5); }
+function mondayOf(s){ return addDays(s,-((fromYmd(s).getDay()+6)%7)); }
+function clone(o){ return JSON.parse(JSON.stringify(o)); }
+function num(n){ return Math.round(n).toLocaleString('en-US'); }
+function kg1(n){ return (Math.round(n*10)/10).toFixed(1); }
+function fmtC(c){ return c<10?String(Math.round(c*10)/10):num(c); }
+function toNum(v){ if(v===''||v==null) return NaN; return parseFloat(String(v).replace(',','.')); }
+function L(s){ return '<bdi dir="ltr">'+s+'</bdi>'; }
+function signed(x){ var r=Math.round(x*10)/10; return (r>0?'+':r<0?'−':'')+Math.abs(r).toFixed(1); }
+var HE_D=['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
+var HE_S=['א׳','ב׳','ג׳','ד׳','ה׳','ו׳','ש׳'];
+function dm(s){ var d=fromYmd(s); return d.getDate()+'.'+(d.getMonth()+1); }
+function longDate(s){ var d=fromYmd(s), m; try{ m=d.toLocaleDateString('he-IL',{day:'numeric',month:'long'}); }catch(e){ m=dm(s); } return 'יום '+HE_D[d.getDay()]+' · '+m; }
+function chev(dir){ return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="'+(dir==='r'?'M9 5l7 7-7 7':'M15 5l-7 7 7 7')+'"/></svg>'; }
+var CHECK='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+function isStandalone(){ try{ return navigator.standalone===true||(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches); }catch(e){ return false; } }
+
+/* ---------- foods ----------
+   Values per portion: k = kcal, p = protein g, c = net carbs g (carbs minus fibre).
+   step = how much one tap of +/− changes (0.5 for main dishes). */
+var FOODS={
+  coffee:{label:'קפה עם שמנת 38%',sub:'רבע כוס שמנת (כ־60 מ״ל), בלי סוכר',k:210,p:1.3,c:1.9,grp:'drink'},
+  creamtbsp:{label:'שמנת מתוקה 38%',sub:'כף (15 מ״ל)',k:53,p:0.3,c:0.5,grp:'drink'},
+  egg:{label:'ביצה קשה',sub:'ביצה בגודל L',k:72,p:6.3,c:0.4,grp:'egg'},
+  eggfried:{label:'ביצת עין / חביתה',sub:'ביצה אחת, כולל מעט שמן',k:95,p:6.3,c:0.4,grp:'egg'},
+  goatgouda:{label:'גאודה עיזים',sub:'פרוסה (כ־20 גרם)',k:75,p:5,c:0.1,grp:'egg'},
+  yellowcheese:{label:'גבינה צהובה',sub:'פרוסה (כ־20 גרם)',k:70,p:5,c:0.1,grp:'egg'},
+  pecan:{label:'פקאן',sub:'חצי אגוז · חופן קטן ≈ 10 חצאים',k:10,p:0.13,c:0.06,grp:'nut'},
+  brazil:{label:'אגוז ברזיל',sub:'אגוז אחד',k:33,p:0.7,c:0.2,grp:'nut',max:3,maxNote:'עדיף לא יותר מ־3 ביום – יש בהם הרבה סלניום'},
+  almond:{label:'שקד',sub:'שקד אחד',k:7,p:0.25,c:0.1,grp:'nut'},
+  walnut:{label:'אגוז מלך',sub:'חצי אגוז',k:13,p:0.3,c:0.14,grp:'nut'},
+  macadamia:{label:'מקדמיה',sub:'אגוז אחד',k:19,p:0.2,c:0.14,grp:'nut'},
+  burger:{label:'המבורגר קיטו',sub:'קציצה בלי לחמנייה (כ־150 גרם נא)',k:380,p:26,c:0,grp:'meat',step:0.5},
+  pargit:{label:'פרגית',sub:'יחידה (כ־110 גרם נא)',k:160,p:21,c:0,grp:'meat',step:0.5},
+  entrecote:{label:'סטייק אנטריקוט',sub:'מנה (כ־200 גרם נא)',k:580,p:36,c:0,grp:'meat',step:0.5},
+  sinta:{label:'סטייק סינטה',sub:'מנה (כ־200 גרם נא)',k:440,p:40,c:0,grp:'meat',step:0.5},
+  tuna:{label:'טונה בשמן',sub:'קופסה קטנה, מסוננת',k:180,p:19,c:0,grp:'meat',step:0.5},
+  cauli:{label:'כרובית',sub:'מנה (כוס, כ־150 גרם)',k:38,p:2.9,c:4.5,grp:'veg',step:0.5},
+  broccoli:{label:'ברוקולי',sub:'מנה (כוס, כ־150 גרם)',k:51,p:4.2,c:6,grp:'veg',step:0.5},
+  salad:{label:'סלט ירקות',sub:'מלפפון, עגבנייה וחסה – קערה קטנה',k:25,p:1,c:4,grp:'veg',step:0.5},
+  avocado:{label:'אבוקדו',sub:'חצי אבוקדו',k:160,p:2,c:1.8,grp:'veg',step:0.5},
+  oil:{label:'שמן זית',sub:'כף',k:120,p:0,c:0,grp:'fat',step:0.5},
+  butter:{label:'חמאה',sub:'כף (14 גרם)',k:100,p:0.1,c:0,grp:'fat',step:0.5},
+  mayo:{label:'מיונז',sub:'כף',k:95,p:0.1,c:0.1,grp:'fat',step:0.5}
+};
+var GROUPS=[
+  {id:'meat',label:'בשר, עוף ודגים'},
+  {id:'egg',label:'ביצים וגבינות'},
+  {id:'nut',label:'אגוזים – לפי מספר'},
+  {id:'veg',label:'ירקות ואבוקדו'},
+  {id:'fat',label:'שמן, חמאה ורטבים'},
+  {id:'drink',label:'קפה ושמנת'},
+  {id:'mine',label:'המאכלים שלי'}
+];
+/* usual = one-tap chips: [food id, quantity added by the first tap] */
+var MEALS=[
+  {id:'morning',label:'בוקר',usual:[['coffee',1]]},
+  {id:'lunch',label:'צהריים',usual:[['egg',3]]},
+  {id:'snack',label:'ביניים',usual:[['pecan',10],['brazil',2],['goatgouda',1]]},
+  {id:'dinner',label:'ערב',usual:[['burger',1],['pargit',2],['entrecote',1],['sinta',1],['cauli',1],['oil',1]]}
+];
+var MEAL_LABEL={}; MEALS.forEach(function(m){ MEAL_LABEL[m.id]=m.label; });
+var ACTS=[
+  {label:'רוב היום בישיבה',sub:'עבודה או לימודים ליד שולחן, מעט הליכה',m:1.2},
+  {label:'חלק מהיום על הרגליים',sub:'למשל עבודה בעמידה, הליכה יומית',m:1.375},
+  {label:'הרבה תנועה',sub:'עבודה פיזית או ספורט קבוע',m:1.55}
+];
+
+/* ---------- state ---------- */
+var LS_KEY='my-keto-v1';
+function blankState(){ return {v:1,profile:null,targets:null,days:{},weights:{},custom:{},lastBackup:0,introSeen:false}; }
+var S=blankState();
+var ui={tab:'daily',date:todayStr(),pick:null,newFood:null,wPer:false,wMsg:'',wErr:false,delW:null,week:null,
+  su:null,suMsg:'',editProfile:false,bkMsg:'',bkErr:false,bkText:'',pendingImport:null,shareMsg:'',tMsg:''};
+var storageOk=true;
+
+function clampQ(q){ return Math.min(99,Math.round(q*2)/2); }
+function normProfile(p){
+  if(!p||typeof p!=='object') return null;
+  var o={sex:p.sex==='m'?'m':'f',age:+p.age,height:+p.height,startKg:+p.startKg,goalKg:+p.goalKg,act:[0,1,2].indexOf(+p.act)>=0?+p.act:1,startDate:isDate(p.startDate)?p.startDate:null};
+  if(!(o.age>0&&o.height>0&&o.startKg>0)) return null;
+  if(!(o.goalKg>0)) o.goalKg=null;
+  return o;
+}
+function normTargets(t){
+  if(!t||typeof t!=='object') return null;
+  var o={k:+t.k,p:+t.p,c:+t.c};
+  return o.k>0&&o.p>0&&o.c>0?o:null;
+}
+function normDay(d,custom){
+  if(!d||typeof d!=='object'||!d.m||typeof d.m!=='object') return null;
+  var out={m:{}}, any=false;
+  MEALS.forEach(function(m){
+    var src=d.m[m.id], o={};
+    if(src&&typeof src==='object') Object.keys(src).forEach(function(id){ var q=+src[id]; if(q>0&&(FOODS[id]||custom[id])){ o[id]=clampQ(q); any=true; } });
+    out.m[m.id]=o;
+  });
+  return any?out:null;
+}
+function normState(o){
+  var s=blankState();
+  if(!o||typeof o!=='object') return s;
+  s.profile=normProfile(o.profile);
+  s.targets=normTargets(o.targets);
+  if(o.custom&&typeof o.custom==='object') Object.keys(o.custom).forEach(function(id){
+    var c=o.custom[id];
+    if(/^c_[a-z0-9]+$/.test(id)&&c&&typeof c==='object'&&c.label) s.custom[id]={label:String(c.label).slice(0,60),k:Math.max(0,+c.k||0),p:Math.max(0,+c.p||0),c:Math.max(0,+c.c||0),h:!!c.h};
+  });
+  if(o.days&&typeof o.days==='object') Object.keys(o.days).forEach(function(k){ if(isDate(k)){ var d=normDay(o.days[k],s.custom); if(d) s.days[k]=d; } });
+  if(o.weights&&typeof o.weights==='object') Object.keys(o.weights).forEach(function(k){
+    var w=o.weights[k], kg=w&&typeof w==='object'?+w.kg:+w;
+    if(isDate(k)&&kg>20&&kg<400) s.weights[k]={kg:kg,per:!!(w&&w.per)};
+  });
+  s.lastBackup=+o.lastBackup||0;
+  s.introSeen=!!o.introSeen;
+  if(s.profile&&!s.targets) s.targets=calcTargets(s.profile);
+  return s;
+}
+function load(){ try{ var raw=localStorage.getItem(LS_KEY); if(raw) S=normState(JSON.parse(raw)); }catch(e){} }
+function save(){
+  try{ localStorage.setItem(LS_KEY,JSON.stringify(S)); storageOk=true; }catch(e){ storageOk=false; }
+  var b=$('#store-warn'); if(b) b.hidden=storageOk;
+}
+
+/* ---------- targets ---------- */
+function tdeeOf(pr,kg){
+  var w=kg||pr.startKg;
+  var bmr=10*w+6.25*pr.height-5*pr.age+(pr.sex==='m'?5:-161); /* Mifflin–St Jeor */
+  return bmr*(ACTS[pr.act]||ACTS[1]).m;
+}
+/* A moderate deficit (about 22%, at most 500 kcal) for roughly 0.3–0.5 kg a week; protein 1.4 g per kg of goal weight. */
+function calcTargets(pr,kg){
+  var t=tdeeOf(pr,kg);
+  var k=Math.max(pr.sex==='m'?1500:1200,Math.round((t-Math.min(500,t*0.22))/50)*50);
+  var p=Math.max(50,Math.round((pr.goalKg||kg||pr.startKg)*1.4/5)*5);
+  return {k:k,p:p,c:20};
+}
+
+/* ---------- food maths ---------- */
+function food(id){ return FOODS[id]||S.custom[id]||null; }
+function itemTot(id,q){ var f=food(id); return f?{k:f.k*q,p:f.p*q,c:f.c*q}:{k:0,p:0,c:0}; }
+function mealTot(o){ var r={k:0,p:0,c:0}; for(var id in o){ var x=itemTot(id,o[id]); r.k+=x.k; r.p+=x.p; r.c+=x.c; } return r; }
+function dayTot(d){ var r={k:0,p:0,c:0}; if(!d) return r; MEALS.forEach(function(m){ var x=mealTot(d.m[m.id]||{}); r.k+=x.k; r.p+=x.p; r.c+=x.c; }); return r; }
+function dayLogged(d){ return !!d&&MEALS.some(function(m){ return d.m[m.id]&&Object.keys(d.m[m.id]).length>0; }); }
+function editDay(date,fn){
+  var d=S.days[date];
+  if(!d){ d={m:{}}; MEALS.forEach(function(m){ d.m[m.id]={}; }); S.days[date]=d; }
+  MEALS.forEach(function(m){ if(!d.m[m.id]) d.m[m.id]={}; });
+  fn(d);
+  if(!dayLogged(d)) delete S.days[date];
+  save();
+}
+function prevLogged(date){
+  var ks=Object.keys(S.days).filter(function(k){ return k<date&&dayLogged(S.days[k]); }).sort();
+  return ks.length?ks[ks.length-1]:null;
+}
+function qtxt(q){ var w=Math.floor(q+1e-9), h=q-w>0.01; return (w?String(w):'')+(h?'½':'')||'0'; }
+
+/* ---------- weigh-ins ---------- */
+function entries(){ return Object.keys(S.weights).filter(isDate).sort().map(function(k){ return {date:k,kg:S.weights[k].kg,per:!!S.weights[k].per}; }); }
+function lastWeight(){ var e=entries(); return e.length?e[e.length-1].kg:null; }
+
+/* ---------- daily view ---------- */
+function navHtml(){
+  var t=todayStr(), isT=ui.date===t;
+  return '<div class="nav">'
+    +'<button class="ico" data-act="day" data-v="-1" aria-label="היום הקודם">'+chev('r')+'</button>'
+    +'<div class="nav-t"><h2>'+(isT?'היום · ':'')+longDate(ui.date)+'</h2>'+(isT?'':'<button data-act="today">חזרה להיום</button>')+'</div>'
+    +'<button class="ico" data-act="day" data-v="1" aria-label="היום הבא"'+(ui.date<t?'':' disabled')+'>'+chev('l')+'</button>'
+    +'</div>';
+}
+function meterHtml(o){
+  var pct=o.target>0?Math.min(100,o.val/o.target*100):0;
+  return '<div class="meter'+(o.main?' main':'')+'"><div class="meter-h"><span class="lbl">'+o.label+'</span>'
+    +'<span class="meter-n"><b>'+L(o.txt)+'</b><i>/ '+L(o.ttxt)+' '+o.unit+'</i></span></div>'
+    +'<div class="track"><div class="fill '+o.cls+'" style="width:'+pct.toFixed(1)+'%"></div></div>'
+    +'<span class="meter-s '+(o.scls||'')+'">'+o.note+'</span></div>';
+}
+function summaryHtml(d){
+  var t=dayTot(d), T=S.targets, logged=dayLogged(d);
+  var c=Math.round(t.c*10)/10, cOver=c-T.c;
+  var cls=cOver<=0?'':cOver<=5?'warn':'bad';
+  var cNote=!logged?'עד '+L(T.c)+' ג׳ ביום – זה העיקר בקיטו'
+    :cOver<=0?'נשארו '+L(fmtC(T.c-c))+' ג׳ · בתוך היעד ✓'
+    :'מעל היעד ב־'+L(fmtC(cOver))+' ג׳';
+  var kLeft=T.k-t.k;
+  var kNote=!logged?'יעד יומי':kLeft>=0?'נשארו '+L(num(kLeft)):'מעל היעד ב־'+L(num(-kLeft));
+  var kCls=logged&&kLeft<-T.k*0.1?'warn':'';
+  var pLeft=T.p-t.p;
+  var pNote=!logged?'יעד יומי':pLeft<=0?'הגעת ליעד ✓':'חסרים '+L(num(pLeft))+' ג׳';
+  return '<section class="card meters">'
+    +meterHtml({main:true,label:'פחמימות נטו',val:c,target:T.c,txt:fmtC(c),ttxt:T.c,unit:'ג׳',cls:'c '+cls,note:cNote,scls:logged?(cls?(cls==='bad'?'bad':'warn'):'ok'):''})
+    +'<div class="duo">'
+    +meterHtml({label:'קלוריות',val:t.k,target:T.k,txt:num(t.k),ttxt:num(T.k),unit:'',cls:'k',note:kNote,scls:kCls})
+    +meterHtml({label:'חלבון',val:t.p,target:T.p,txt:num(t.p),ttxt:T.p,unit:'ג׳',cls:'p',note:pNote,scls:logged&&pLeft<=0?'ok':''})
+    +'</div></section>';
+}
+function rowHtml(meal,id,q){
+  var f=food(id); if(!f) return '';
+  var x=itemTot(id,q), lab=esc(f.label);
+  var warn=f.max&&q>f.max?'<span class="fwarn">'+esc(f.maxNote)+'</span>':'';
+  return '<div class="frow"><div class="fname">'+lab+(f.sub?'<small>'+esc(f.sub)+'</small>':'')
+    +'<small class="fx">'+L(num(x.k))+' קק״ל · '+L(fmtC(x.c))+' ג׳ פחמ׳ · '+L(num(x.p))+' ג׳ חלבון</small>'+warn+'</div>'
+    +'<div class="stp"><button data-act="q" data-meal="'+meal+'" data-id="'+id+'" data-v="-1" aria-label="פחות '+lab+'">−</button>'
+    +'<b>'+L(qtxt(q))+'</b>'
+    +'<button data-act="q" data-meal="'+meal+'" data-id="'+id+'" data-v="1" aria-label="עוד '+lab+'">+</button></div></div>';
+}
+function customFormHtml(meal){
+  return '<div class="cform">'
+    +'<label class="f"><span class="lbl">שם המאכל</span><input type="text" id="cf-name" maxlength="40" placeholder="למשל: קציצות עוף, 2 יחידות" autocomplete="off"></label>'
+    +'<div class="cf3">'
+    +'<label class="f"><span class="lbl">קלוריות</span><input type="number" id="cf-k" inputmode="decimal" min="0" placeholder="0"></label>'
+    +'<label class="f"><span class="lbl">פחמ׳ נטו (ג׳)</span><input type="number" id="cf-c" inputmode="decimal" min="0" placeholder="0"></label>'
+    +'<label class="f"><span class="lbl">חלבון (ג׳)</span><input type="number" id="cf-p" inputmode="decimal" min="0" placeholder="0"></label>'
+    +'</div>'
+    +'<p class="hint">הערכים הם למנה אחת כמו שאוכלים אותה. על אריזה: פחמימות נטו = פחמימות פחות סיבים תזונתיים. המאכל יישמר ברשימה ״המאכלים שלי״.</p>'
+    +'<p class="msg err" id="cf-msg"></p>'
+    +'<div class="row-btns"><button class="btn" data-act="savefood" data-meal="'+meal+'">שמירה והוספה</button><button class="btn alt" data-act="newfood" data-meal="">ביטול</button></div>'
+    +'</div>';
+}
+function pickerHtml(meal,o){
+  var h='<div class="picker"><div class="pk-h"><span class="lbl">הוספה ל'+MEAL_LABEL[meal]+' – כל לחיצה מוסיפה מנה</span><button class="link" data-act="pick" data-meal="">סגירה</button></div>';
+  GROUPS.forEach(function(g){
+    var ids=g.id==='mine'
+      ?Object.keys(S.custom).filter(function(id){ return !S.custom[id].h; })
+      :Object.keys(FOODS).filter(function(id){ return FOODS[id].grp===g.id; });
+    if(!ids.length) return;
+    h+='<div class="grp"><span class="lbl">'+g.label+'</span><div class="chips">'+ids.map(function(id){
+      var f=food(id), on=!!o[id];
+      return '<button class="chip" data-act="add" data-meal="'+meal+'" data-id="'+id+'" data-q="1" aria-pressed="'+on+'">'+esc(f.label)+(f.sub?'<small>'+esc(f.sub)+'</small>':'')+'</button>';
+    }).join('')+'</div></div>';
+  });
+  h+=ui.newFood===meal?customFormHtml(meal):'<button class="more" data-act="newfood" data-meal="'+meal+'">+ מאכל חדש שלא ברשימה</button>';
+  return h+'</div>';
+}
+function mealHtml(m,d){
+  var o=(d&&d.m[m.id])||{}, ids=Object.keys(o), t=mealTot(o);
+  var h='<section class="card"><div class="card-h"><h3>'+m.label+'</h3>'
+    +(ids.length?'<span class="mt">'+L(num(t.k))+' קק״ל · '+L(fmtC(t.c))+' ג׳ פחמ׳</span>':'')+'</div>';
+  ids.forEach(function(id){ h+=rowHtml(m.id,id,o[id]); });
+  var usual=m.usual.filter(function(u){ return !o[u[0]]; });
+  if(usual.length) h+='<div class="chips">'+usual.map(function(u){
+    var f=FOODS[u[0]];
+    return '<button class="chip add" data-act="add" data-meal="'+m.id+'" data-id="'+u[0]+'" data-q="'+u[1]+'">+ '+esc(f.label)+(u[1]>1?' '+L('×'+u[1]):'')+'</button>';
+  }).join('')+'</div>';
+  h+=ui.pick===m.id?pickerHtml(m.id,o):'<button class="more" data-act="pick" data-meal="'+m.id+'">+ מאכל אחר</button>';
+  return h+'</section>';
+}
+function dailyHtml(){
+  var d=S.days[ui.date]||null, t=todayStr(), h=navHtml();
+  if(!S.introSeen){
+    var T=S.targets;
+    h+='<section class="card soft"><h3>היעדים היומיים</h3>'
+      +'<p class="note">'+L(T.c)+' ג׳ פחמימות נטו לכל היותר · כ־'+L(num(T.k))+' קלוריות · '+L(T.p)+' ג׳ חלבון. '
+      +'הם חושבו לפי הפרטים ששמרת, לירידה מתונה של כ־0.3–0.5 ק״ג בשבוע. אפשר לשנות אותם בהגדרות.</p>'
+      +'<p class="note">רושמים מה אכלת בלחיצות על המאכלים. ביום שאוכלים כמו אתמול – כפתור אחד מעתיק את כל היום.</p>'
+      +'<button class="btn" data-act="intro-ok">הבנתי, מתחילים</button></section>';
+  }
+  if(ui.date===t&&fromYmd(t).getDay()===1&&!S.weights[t]){
+    h+='<section class="card soft"><div class="card-h"><h3>היום יום שני – יום שקילה</h3></div>'
+      +'<p class="note">בבוקר, אחרי השירותים ולפני שאוכלים או שותים.</p>'
+      +'<button class="btn" data-act="tab" data-v="weigh">לשקילה</button></section>';
+  }
+  h+=summaryHtml(d);
+  if(!dayLogged(d)){
+    var src=prevLogged(ui.date);
+    if(src){
+      var st=dayTot(S.days[src]);
+      h+='<button class="btn alt" data-act="copy" data-v="'+src+'">להעתיק את '+longDate(src)+'<span class="hint">'+L(num(st.k))+' קק״ל · '+L(fmtC(st.c))+' ג׳ פחמ׳ – ואז לשנות מה שצריך</span></button>';
+    }
+  }
+  MEALS.forEach(function(m){ h+=mealHtml(m,d); });
+  if(S.profile&&S.profile.startDate){
+    var n=daysBetween(S.profile.startDate,ui.date);
+    if(n>=0&&n<=28) h+=firstWeeksHtml(n);
+  }
+  return h;
+}
+function firstWeeksHtml(n){
+  return '<section class="card"><details'+(n<=10?' open':'')+'><summary>החודש הראשון בקיטו – יום '+L(n+1)+'</summary><ul class="tips">'
+    +'<li>עייפות, כאב ראש או סחרחורת בשבועות הראשונים (״שפעת קיטו״) נפוצים וחולפים. בדרך כלל עוזר: הרבה מים, קצת יותר מלח באוכל או כוס מרק/ציר, וירקות ירוקים.</li>'
+    +'<li>הירידה הגדולה בשבוע–שבועיים הראשונים היא בעיקר מים. אחר כך הקצב נרגע ל־0.3–0.5 ק״ג בשבוע – זה נורמלי ובריא.</li>'
+    +'<li>הכי חשוב: פחמימות נטו עד '+L(S.targets.c)+' ג׳ ביום. שמנת, אגוזים ושמן הם קיטו, אבל הקלוריות שלהם מצטברות מהר.</li>'
+    +'</ul></details></section>';
+}
+
+/* ---------- weigh view ---------- */
+function statusMsg(en){
+  var last=en[en.length-1], prev=en[en.length-2], pr=S.profile;
+  var diff=prev?last.kg-prev.kg:null;
+  if(pr.goalKg&&last.kg<=pr.goalKg) return 'הגעת ליעד 🎉 מכאן אפשר להעלות מעט את הקלוריות כדי לשמור על המשקל – בהגדרות.';
+  if(last.per&&diff!=null&&diff>0) return 'עלייה בשבוע המחזור היא בדרך כלל אגירת מים, לא שומן. השקילה של השבוע הבא תראה את התמונה האמיתית.';
+  if(pr.startDate&&daysBetween(pr.startDate,last.date)<=21) return 'בשבועות הראשונים של קיטו יורדים הרבה מים, ולכן הירידה מהירה. אחר כך הקצב נרגע ל־0.3–0.5 ק״ג בשבוע – זה בדיוק מה שצריך.';
+  if(diff==null) return 'השקילה הבאה ביום שני הבא. מסתכלים על המגמה לאורך כמה שבועות, לא על שקילה אחת.';
+  if(diff>0.2) return 'עלייה קטנה משבוע לשבוע קורית (מים, מלח, מחזור). מה שקובע זו המגמה לאורך כמה שבועות.';
+  if(diff>=-0.2){
+    var flat=en.length>=3&&Math.abs(en[en.length-3].kg-last.kg)<=0.3;
+    return flat?'המשקל יציב כבר שלושה שבועות. כדאי לבדוק בסיכום השבועי את ממוצע הקלוריות – שמנת, אגוזים ושמן מצטברים מהר.':'שבוע יציב. זה קורה – מסתכלים על המגמה של כמה שבועות.';
+  }
+  return 'ירידה של '+L(kg1(-diff))+' ק״ג השבוע. קצב טוב – ממשיכים ככה.';
+}
+function paceHtml(en){
+  var pr=S.profile; if(!pr.goalKg||en.length<4) return '';
+  var a=en[0], b=en[en.length-1], wks=daysBetween(a.date,b.date)/7;
+  if(wks<3) return '';
+  var rate=(a.kg-b.kg)/wks, left=b.kg-pr.goalKg;
+  if(left<=0||rate<0.05) return '';
+  return '<p class="note">בקצב הנוכחי ('+L(kg1(rate))+' ק״ג בשבוע בממוצע) היעד בעוד כ־'+L(Math.ceil(left/rate))+' שבועות.</p>';
+}
+function chartSvg(en){
+  var pr=S.profile, pts=en.map(function(e){ return {t:fromYmd(e.date).getTime(),v:e.kg,per:e.per}; });
+  var st=pr.startDate&&pr.startKg?{t:fromYmd(pr.startDate).getTime(),v:pr.startKg}:null;
+  if(st&&pts.length&&st.t>=pts[0].t) st=null;
+  var all=(st?[st]:[]).concat(pts);
+  if(all.length<2) return '';
+  var vs=all.map(function(p){ return p.v; }); if(pr.goalKg) vs.push(pr.goalKg);
+  var lo=Math.floor(Math.min.apply(null,vs)-0.5), hi=Math.ceil(Math.max.apply(null,vs)+0.5);
+  var W=340,H=180,LP=30,RP=12,TP=10,BP=24, t0=all[0].t, t1=all[all.length-1].t;
+  function x(t){ return t1===t0?(LP+W-RP)/2:LP+(t-t0)/(t1-t0)*(W-LP-RP); }
+  function y(v){ return TP+(hi-v)/(hi-lo)*(H-TP-BP); }
+  var s='<svg class="chart" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="גרף משקל לפי שבועות">';
+  var stepKg=hi-lo>8?2:1;
+  for(var g=lo;g<=hi;g+=stepKg){
+    s+='<line x1="'+LP+'" x2="'+(W-RP)+'" y1="'+y(g)+'" y2="'+y(g)+'" stroke="var(--line)" stroke-width="1"/>'
+      +'<text x="'+(LP-6)+'" y="'+(y(g)+4)+'" text-anchor="end" font-size="11" fill="var(--muted)">'+g+'</text>';
+  }
+  if(pr.goalKg){
+    s+='<line x1="'+LP+'" x2="'+(W-RP)+'" y1="'+y(pr.goalKg)+'" y2="'+y(pr.goalKg)+'" stroke="var(--accent)" stroke-width="1.5" stroke-dasharray="5 4"/>'
+      +'<text x="'+(W-RP)+'" y="'+(y(pr.goalKg)-5)+'" text-anchor="end" font-size="11" fill="var(--accent)">יעד '+pr.goalKg+'</text>';
+  }
+  if(st&&pts.length) s+='<line x1="'+x(st.t)+'" y1="'+y(st.v)+'" x2="'+x(pts[0].t)+'" y2="'+y(pts[0].v)+'" stroke="var(--faint)" stroke-width="2" stroke-dasharray="3 4"/>';
+  if(pts.length>1) s+='<polyline fill="none" stroke="var(--fg)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" points="'+pts.map(function(p){ return x(p.t).toFixed(1)+','+y(p.v).toFixed(1); }).join(' ')+'"/>';
+  if(st) s+='<circle cx="'+x(st.t)+'" cy="'+y(st.v)+'" r="4.5" fill="var(--surface)" stroke="var(--faint)" stroke-width="2"/>';
+  pts.forEach(function(p){
+    s+='<circle cx="'+x(p.t)+'" cy="'+y(p.v)+'" r="4.5" fill="var(--fg)"/>';
+    if(p.per) s+='<circle cx="'+x(p.t)+'" cy="'+y(p.v)+'" r="8" fill="none" stroke="var(--prot)" stroke-width="1.5"/>';
+  });
+  var f=all[0], l=all[all.length-1];
+  s+='<text x="'+x(f.t)+'" y="'+(H-6)+'" text-anchor="start" font-size="11" fill="var(--muted)">'+(st?'התחלה ':'')+dm(ymd(new Date(f.t)))+'</text>';
+  if(l.t!==f.t) s+='<text x="'+x(l.t)+'" y="'+(H-6)+'" text-anchor="end" font-size="11" fill="var(--muted)">'+dm(ymd(new Date(l.t)))+'</text>';
+  return s+'</svg>';
+}
+function weighHtml(){
+  var en=entries(), t=todayStr(), pr=S.profile;
+  var wDate=ui.wDate||t, notMon=fromYmd(wDate).getDay()!==1, ex=S.weights[wDate];
+  var h='<section class="card"><div class="card-h"><h3>שקילה</h3><span class="hint">כל יום שני בבוקר</span></div>'
+    +'<div class="form2">'
+    +'<label class="f"><span class="lbl">תאריך</span><input type="date" id="w-date" value="'+wDate+'" max="'+t+'"></label>'
+    +'<label class="f"><span class="lbl">משקל (ק״ג)</span><input type="number" id="w-kg" inputmode="decimal" step="0.1" min="30" max="300" placeholder="'+(en.length?kg1(en[en.length-1].kg):'0.0')+'"'+(ex?' value="'+kg1(ex.kg)+'"':'')+'></label>'
+    +'</div>'
+    +(notMon?'<p class="hint">'+(wDate===t?'היום':'התאריך הזה')+' לא יום שני – אפשר לשמור בכל זאת, למשל אם השקילה נדחתה.</p>':'')
+    +'<button class="check" data-act="wper" aria-pressed="'+(ex?ex.per:ui.wPer)+'"><span class="box">'+CHECK+'</span><span class="t">שבוע המחזור (או שהוא עומד להתחיל)<small>אגירת מים יכולה להוסיף 1–2 ק״ג זמניים. הסימון עוזר לא להיבהל.</small></span></button>'
+    +'<button class="btn" data-act="wsave">'+(ex?'עדכון השקילה':'שמירת שקילה')+'</button>'
+    +'<p class="msg'+(ui.wErr?' err':'')+'">'+ui.wMsg+'</p>'
+    +'<details><summary>איך לשקול נכון</summary><ul class="tips">'
+    +'<li>ביום שני בבוקר, אחרי השירותים ולפני שאוכלים או שותים.</li>'
+    +'<li>עם מעט בגדים או בלי – כל פעם באותו אופן.</li>'
+    +'<li>אותו משקל, על רצפה ישרה וקשה (לא על שטיח).</li>'
+    +'<li>שקילה אחת בשבוע מספיקה. המשקל קופץ מיום ליום בגלל מים, ולכן מסתכלים על המגמה.</li>'
+    +'</ul></details></section>';
+  if(!en.length){
+    h+='<section class="card"><p class="note">אחרי השקילה הראשונה יופיעו כאן המשקל, השינוי מתחילת הקיטו, גרף וכמה נשאר עד היעד.'
+      +(pr.startKg?' נקודת ההתחלה: '+L(kg1(pr.startKg))+' ק״ג'+(pr.startDate?' ('+dm(pr.startDate)+')':'')+'.':'')+'</p></section>';
+    return h;
+  }
+  var last=en[en.length-1], prev=en[en.length-2];
+  var dPrev=prev?last.kg-prev.kg:null, dStart=pr.startKg?last.kg-pr.startKg:null, left=pr.goalKg?last.kg-pr.goalKg:null;
+  function cell(label,val,cls){ return '<div><span>'+label+'</span><b class="'+(cls||'')+'">'+val+'</b></div>'; }
+  function dc(x){ return x==null?'':x<-0.05?'down':x>0.05?'up':''; }
+  h+='<section class="card"><div class="card-h"><span class="lbl">שקילה אחרונה · '+longDate(last.date)+'</span></div>'
+    +'<div class="big"><b>'+L(kg1(last.kg))+'</b><span>ק״ג</span></div>'
+    +'<div class="deltas">'
+    +cell('מהשקילה הקודמת',dPrev==null?'—':L(signed(dPrev)),dc(dPrev))
+    +cell('מתחילת הקיטו',dStart==null?'—':L(signed(dStart)),dc(dStart))
+    +cell('עד היעד',left==null?'—':left<=0?'הגעת ✓':L(kg1(left))+' ק״ג','')
+    +'</div>';
+  if(pr.goalKg&&pr.startKg>pr.goalKg){
+    var pct=Math.max(0,Math.min(100,(pr.startKg-last.kg)/(pr.startKg-pr.goalKg)*100));
+    h+='<div class="goalbar"><div class="track"><div class="fill" style="width:'+pct.toFixed(1)+'%"></div></div>'
+      +'<span class="hint">'+L(Math.round(pct)+'%')+' מהדרך: מ־'+L(kg1(pr.startKg))+' אל '+L(kg1(pr.goalKg))+' ק״ג</span></div>';
+  }
+  h+='<p class="status">'+statusMsg(en)+'</p>'+paceHtml(en)+'</section>';
+  var ch=chartSvg(en);
+  if(ch) h+='<section class="card"><div class="card-h"><h3>גרף</h3><span class="hint">עיגול אדום = שבוע מחזור</span></div>'+ch+'</section>';
+  h+='<section class="card"><div class="card-h"><h3>כל השקילות</h3></div><div class="wlist">';
+  en.slice().reverse().forEach(function(e,i,arr){
+    var p=arr[i+1], d=p?e.kg-p.kg:null;
+    h+='<div class="wrow"><span class="d">'+dm(e.date)+'<small>יום '+HE_D[fromYmd(e.date).getDay()]+'</small></span>'
+      +'<span class="kg">'+L(kg1(e.kg))+'</span>'
+      +'<span class="dl">'+(d==null?'':L(signed(d)))+'</span>'
+      +(ui.delW===e.date
+        ?'<button class="tagbtn del" data-act="wdel2" data-v="'+e.date+'">למחוק?</button>'
+        :'<span><button class="tagbtn" data-act="wpert" data-v="'+e.date+'" aria-pressed="'+e.per+'">מחזור</button> <button class="tagbtn" data-act="wdel" data-v="'+e.date+'" aria-label="מחיקת השקילה של '+dm(e.date)+'">✕</button></span>')
+      +'</div>';
+  });
+  h+='</div></section>';
+  if(Date.now()-S.lastBackup>30*864e5&&en.length>=2){
+    h+='<section class="card soft"><h3>כדאי לגבות</h3><p class="note">הנתונים שמורים רק בטלפון הזה. פעם בחודש כדאי לשמור קובץ גיבוי (לקבצים, למייל או לוואטסאפ לעצמך).</p>'
+      +'<button class="btn" data-act="export">שמירת גיבוי</button><p class="msg'+(ui.bkErr?' err':'')+'">'+(ui.tab==='weigh'?ui.bkMsg:'')+'</p></section>';
+  }
+  return h;
+}
+
+/* ---------- weekly view ---------- */
+function weekData(ws){
+  var rows=[], logged=[], sum={k:0,p:0,c:0}, okC=0, t=todayStr();
+  for(var i=0;i<7;i++){
+    var date=addDays(ws,i), d=S.days[date], tot=dayLogged(d)?dayTot(d):null;
+    rows.push({date:date,tot:tot,future:date>t});
+    if(tot){ logged.push(date); sum.k+=tot.k; sum.p+=tot.p; sum.c+=tot.c; if(tot.c<=S.targets.c+0.05) okC++; }
+  }
+  var n=logged.length;
+  /* The week's own weigh-in (normally its Monday) and the next Monday's, which shows how the week went. */
+  function firstIn(from,n){ for(var j=0;j<n;j++){ var dd=addDays(from,j); if(S.weights[dd]) return {date:dd,kg:S.weights[dd].kg,per:S.weights[dd].per}; } return null; }
+  var wStart=firstIn(ws,7), wEnd=firstIn(addDays(ws,7),3);
+  return {ws:ws,we:addDays(ws,6),rows:rows,n:n,avg:n?{k:sum.k/n,p:sum.p/n,c:sum.c/n}:null,okC:okC,wStart:wStart,wEnd:wEnd};
+}
+function changeWords(x){
+  var r=Math.round(x*10)/10;
+  if(r<0) return 'ירידה של '+kg1(-r)+' ק״ג';
+  if(r>0) return 'עלייה של '+kg1(r)+' ק״ג';
+  return 'ללא שינוי';
+}
+function shareText(w){
+  var pr=S.profile, lines=['הקיטו שלי · שבוע '+dm(w.ws)+'–'+dm(w.we)];
+  var wi=w.wEnd||w.wStart;
+  if(wi){
+    var parts=[];
+    if(w.wEnd&&w.wStart) parts.push(changeWords(w.wEnd.kg-w.wStart.kg)+' השבוע');
+    if(pr.startKg) parts.push(changeWords(wi.kg-pr.startKg)+' מתחילת הקיטו');
+    lines.push('⚖️ שקילה '+dm(wi.date)+': '+kg1(wi.kg)+' ק״ג'+(parts.length?' ('+parts.join(', ')+')':'')+(wi.per?' · שבוע מחזור':''));
+    if(pr.goalKg&&wi.kg>pr.goalKg) lines.push('🎯 עד היעד: '+kg1(wi.kg-pr.goalKg)+' ק״ג');
+  }
+  if(w.avg){
+    lines.push('🍽️ ממוצע ליום: '+num(w.avg.k)+' קק״ל · '+fmtC(w.avg.c)+' ג׳ פחמימות נטו · '+num(w.avg.p)+' ג׳ חלבון');
+    lines.push('✅ ימים עד '+S.targets.c+' ג׳ פחמימות: '+w.okC+' מתוך '+w.n+' ימים שנרשמו');
+  } else lines.push('לא נרשם אוכל השבוע.');
+  return lines.join('\n');
+}
+function weekNotes(w){
+  var T=S.targets, out=[];
+  if(!w.avg) return out;
+  out.push(w.okC===w.n?{c:'ok',h:'כל הימים שנרשמו היו עד '+L(T.c)+' ג׳ פחמימות נטו.'}:{c:'warn',h:L(w.n-w.okC)+' מתוך '+L(w.n)+' ימים היו מעל '+L(T.c)+' ג׳ פחמימות נטו.'});
+  var kd=w.avg.k-T.k;
+  if(kd>T.k*0.1) out.push({c:'warn',h:'ממוצע הקלוריות גבוה מהיעד בכ־'+L(num(kd))+'. הכי קל להוריד: שמנת בקפה, אגוזים ושמן.'});
+  else if(kd<-T.k*0.25) out.push({c:'warn',h:'ממוצע הקלוריות נמוך מהיעד בהרבה. אכילה מעטה מדי לאורך זמן מקשה – עדיף להתקרב ליעד.'});
+  else out.push({c:'ok',h:'הקלוריות קרובות ליעד.'});
+  out.push(w.avg.p>=T.p*0.9?{c:'ok',h:'חלבון בממוצע '+L(num(w.avg.p))+' ג׳ – כמעט או מעל היעד.'}:{c:'warn',h:'חלבון בממוצע '+L(num(w.avg.p))+' ג׳ מתוך '+L(T.p)+'. עוד ביצה או מנת עוף עוזרות לשמור על השריר ולשובע.'});
+  if(w.n<5&&w.ws<mondayOf(todayStr())) out.push({c:'',h:'נרשמו '+L(w.n)+' ימים מתוך 7 – ככל שנרשמים יותר ימים, הסיכום מדויק יותר.'});
+  return out;
+}
+function weekHtml(){
+  var cur=mondayOf(todayStr());
+  var ws=ui.week||mondayOf(addDays(todayStr(),-1));
+  if(ws>cur) ws=cur;
+  ui.week=ws;
+  var w=weekData(ws), T=S.targets;
+  var h='<div class="wknav">'
+    +'<button class="ico" data-act="week" data-v="-1" aria-label="השבוע הקודם">'+chev('r')+'</button>'
+    +'<h2>שבוע '+dm(w.ws)+'–'+dm(w.we)+'</h2>'
+    +'<button class="ico" data-act="week" data-v="1" aria-label="השבוע הבא"'+(ws<cur?'':' disabled')+'>'+chev('l')+'</button></div>';
+  h+='<section class="card"><div class="card-h"><h3>ממוצע ליום</h3><span class="hint">'+(w.n?L(w.n)+' ימים נרשמו':'עוד לא נרשם אוכל')+'</span></div>';
+  if(w.avg){
+    h+='<div class="avg"><div><span>פחמ׳ נטו</span><b>'+L(fmtC(w.avg.c))+'</b><span>יעד עד '+L(T.c)+' ג׳</span></div>'
+      +'<div><span>קלוריות</span><b>'+L(num(w.avg.k))+'</b><span>יעד '+L(num(T.k))+'</span></div>'
+      +'<div><span>חלבון</span><b>'+L(num(w.avg.p))+'</b><span>יעד '+L(T.p)+' ג׳</span></div></div>'
+      +'<ul class="ins">'+weekNotes(w).map(function(x){ return '<li class="'+x.c+'">'+x.h+'</li>'; }).join('')+'</ul>';
+  }
+  if(w.wStart||w.wEnd){
+    h+='<div class="kv">'
+      +(w.wStart?'<span>שקילה '+dm(w.wStart.date)+'</span><b>'+L(kg1(w.wStart.kg))+' ק״ג</b>':'')
+      +(w.wEnd?'<span>שקילה '+dm(w.wEnd.date)+'</span><b>'+L(kg1(w.wEnd.kg))+' ק״ג</b>':'')
+      +(w.wStart&&w.wEnd?'<span>שינוי</span><b>'+L(signed(w.wEnd.kg-w.wStart.kg))+' ק״ג</b>':'')
+      +'</div>';
+  }
+  h+='</section>';
+  h+='<section class="card"><table class="wk"><thead><tr><th>יום</th><th>פחמ׳ נטו</th><th>קלוריות</th><th>חלבון</th></tr></thead><tbody>'
+    +w.rows.map(function(r){
+      var dd=fromYmd(r.date);
+      var day='<button class="dayb" data-act="goday" data-v="'+r.date+'"'+(r.future?' disabled':'')+'>'+HE_S[dd.getDay()]+'<small>'+dm(r.date)+'</small></button>';
+      if(!r.tot) return '<tr><td>'+day+'</td><td class="na" colspan="3">'+(r.future?'':'לא נרשם')+'</td></tr>';
+      return '<tr><td>'+day+'</td><td'+(r.tot.c>T.c+0.05?' class="over"':'')+'>'+L(fmtC(r.tot.c))+'</td><td>'+L(num(r.tot.k))+'</td><td>'+L(num(r.tot.p))+'</td></tr>';
+    }).join('')+'</tbody></table></section>';
+  var txt=shareText(w);
+  h+='<section class="card"><div class="card-h"><h3>שליחת הסיכום</h3></div>'
+    +'<pre class="preview" dir="rtl">'+esc(txt)+'</pre>'
+    +'<button class="btn" data-act="share">שליחה בוואטסאפ או בהודעה</button>'
+    +'<p class="msg">'+ui.shareMsg+'</p></section>';
+  return h;
+}
+
+/* ---------- settings view ---------- */
+function settingsHtml(){
+  if(ui.editProfile) return setupHtml(true);
+  var pr=S.profile, T=S.targets, tdee=tdeeOf(pr,lastWeight()), calc=calcTargets(pr,lastWeight());
+  var h='<section class="card"><div class="card-h"><h3>הפרטים שלי</h3><button class="link" data-act="editprofile">עריכה</button></div>'
+    +'<div class="kv"><span>גיל</span><b>'+L(pr.age)+'</b><span>גובה</span><b>'+L(pr.height)+' ס״מ</b>'
+    +'<span>משקל בתחילת הקיטו</span><b>'+L(kg1(pr.startKg))+' ק״ג'+(pr.startDate?' ('+dm(pr.startDate)+')':'')+'</b>'
+    +'<span>יעד</span><b>'+(pr.goalKg?L(kg1(pr.goalKg))+' ק״ג':'—')+'</b>'
+    +'<span>פעילות</span><b>'+ACTS[pr.act].label+'</b></div></section>';
+  h+='<section class="card"><div class="card-h"><h3>יעדים יומיים</h3></div>'
+    +'<div class="tgt">'
+    +'<label class="f"><span class="lbl">פחמ׳ נטו (ג׳)</span><input type="number" id="t-c" inputmode="numeric" min="5" max="100" value="'+T.c+'"></label>'
+    +'<label class="f"><span class="lbl">קלוריות</span><input type="number" id="t-k" inputmode="numeric" min="800" max="5000" step="50" value="'+T.k+'"></label>'
+    +'<label class="f"><span class="lbl">חלבון (ג׳)</span><input type="number" id="t-p" inputmode="numeric" min="20" max="300" value="'+T.p+'"></label>'
+    +'</div>'
+    +'<p class="note">ההוצאה היומית המשוערת: כ־'+L(num(Math.round(tdee/10)*10))+' קלוריות. היעד מחושב עם גירעון מתון, לירידה של כ־0.3–0.5 ק״ג בשבוע, וחלבון של 1.4 ג׳ לכל ק״ג של משקל היעד.</p>'
+    +(calc.k!==T.k||calc.p!==T.p?'<button class="btn alt" data-act="recalc">חישוב מחדש לפי השקילה האחרונה ('+L(num(calc.k))+' קק״ל · '+L(calc.p)+' ג׳ חלבון)</button>':'')
+    +'<p class="msg">'+ui.tMsg+'</p></section>';
+  var mine=Object.keys(S.custom).filter(function(id){ return !S.custom[id].h; });
+  if(mine.length){
+    h+='<section class="card"><div class="card-h"><h3>המאכלים שלי</h3></div><div class="mine">'
+      +mine.map(function(id){ var c=S.custom[id]; return '<div><span>'+esc(c.label)+' <span class="hint">'+L(num(c.k))+' קק״ל · '+L(fmtC(c.c))+' ג׳ פחמ׳ · '+L(num(c.p))+' ג׳ חלבון</span></span><button class="tagbtn del" data-act="fooddel" data-v="'+id+'" aria-label="הסרת '+esc(c.label)+' מהרשימה">הסרה</button></div>'; }).join('')
+      +'</div><p class="hint">הסרה מורידה מהרשימה בלבד. ימים שכבר נרשמו לא משתנים.</p></section>';
+  }
+  h+='<section class="card"><div class="card-h"><h3>גיבוי</h3><span class="hint">'+(S.lastBackup?'אחרון: '+dm(ymd(new Date(S.lastBackup))):'עוד לא גובה')+'</span></div>'
+    +'<p class="note">הנתונים שמורים רק בטלפון הזה, ואף אחד אחר לא רואה אותם. אם מוחקים את האפליקציה או מחליפים טלפון – הם נמחקים, אלא אם שמרת גיבוי. פעם בחודש מספיק.</p>'
+    +'<div class="row-btns"><button class="btn" data-act="export">שמירת קובץ גיבוי</button><button class="btn alt" data-act="copybk">העתקת הגיבוי</button></div>'
+    +(ui.bkText?'<textarea id="bk-text" readonly aria-label="טקסט הגיבוי">'+esc(ui.bkText)+'</textarea>':'')
+    +'<details><summary>טעינת גיבוי</summary><div class="grp">'
+    +'<label class="btn alt" for="imp-file">בחירת קובץ גיבוי</label><input type="file" id="imp-file" accept=".json,application/json,text/plain" hidden>'
+    +'<textarea id="imp-text" placeholder="או להדביק כאן את טקסט הגיבוי"></textarea>'
+    +'<button class="btn alt" data-act="imp-paste">טעינה מהטקסט</button></div></details>'
+    +(ui.pendingImport?'<div class="cform"><p class="note">בגיבוי: ימים שנרשמו – '+L(Object.keys(ui.pendingImport.days).length)+', שקילות – '+L(Object.keys(ui.pendingImport.weights).length)+'. הטעינה תחליף את כל מה שיש עכשיו בטלפון.</p><div class="row-btns"><button class="btn" data-act="imp-apply">להחליף ולטעון</button><button class="btn alt" data-act="imp-cancel">ביטול</button></div></div>':'')
+    +'<p class="msg'+(ui.bkErr?' err':'')+'">'+(ui.tab==='settings'?ui.bkMsg:'')+'</p></section>';
+  if(!isStandalone()) h+=installHtml();
+  return h;
+}
+
+/* ---------- setup ---------- */
+function installHtml(){
+  return '<section class="card install"><h3>להוספה למסך הבית (אייפון)</h3><ol>'
+    +'<li>לפתוח את הקישור ב־Safari.</li>'
+    +'<li>ללחוץ על כפתור השיתוף (ריבוע עם חץ למעלה).</li>'
+    +'<li>לבחור ״הוספה למסך הבית״ ואז ״הוספה״.</li>'
+    +'<li>מעכשיו לפתוח רק מהאייקון שעל מסך הבית.</li>'
+    +'</ol><p class="note">חשוב: מה שממלאים ב־Safari לא עובר לאייקון שעל מסך הבית. לכן כדאי להוסיף קודם, ורק אז למלא.</p></section>';
+}
+function setupHtml(edit){
+  var pr=S.profile||{sex:'f',act:1,startDate:todayStr()};
+  if(!ui.su) ui.su={sex:pr.sex||'f',act:pr.act==null?1:pr.act};
+  function v(x,dec){ return x==null||isNaN(x)?'':dec?kg1(x):String(x); }
+  var h='';
+  if(!edit){
+    h+='<section class="hero"><h1>שלום!</h1><p class="note">כמה פרטים קצרים כדי לחשב יעדים יומיים. הכול נשמר רק בטלפון הזה, ואף אחד אחר לא רואה אותם.</p></section>';
+    if(!isStandalone()) h+=installHtml();
+  }
+  h+='<section class="card"><div class="card-h"><h3>'+(edit?'עריכת הפרטים':'הפרטים שלי')+'</h3></div>'
+    +'<div class="grp"><span class="lbl">מין (לחישוב הקלוריות)</span><div class="seg">'
+    +'<button class="chip" data-act="su-sex" data-v="f" aria-pressed="'+(ui.su.sex==='f')+'">אישה</button>'
+    +'<button class="chip" data-act="su-sex" data-v="m" aria-pressed="'+(ui.su.sex==='m')+'">גבר</button></div></div>'
+    +'<div class="form2">'
+    +'<label class="f"><span class="lbl">גיל</span><input type="number" id="su-age" inputmode="numeric" min="14" max="100" value="'+v(pr.age)+'"></label>'
+    +'<label class="f"><span class="lbl">גובה (ס״מ)</span><input type="number" id="su-h" inputmode="decimal" min="100" max="230" placeholder="160" value="'+v(pr.height)+'"></label>'
+    +'<label class="f"><span class="lbl">משקל לפני הקיטו (ק״ג)</span><input type="number" id="su-w" inputmode="decimal" step="0.1" value="'+v(pr.startKg,1)+'"></label>'
+    +'<label class="f"><span class="lbl">תאריך תחילת הקיטו</span><input type="date" id="su-date" max="'+todayStr()+'" value="'+(pr.startDate||'')+'"></label>'
+    +'<label class="f"><span class="lbl">משקל יעד (ק״ג)</span><input type="number" id="su-goal" inputmode="decimal" step="0.5" value="'+v(pr.goalKg,1)+'"></label>'
+    +'</div>'
+    +'<div class="grp"><span class="lbl">רמת פעילות ביום רגיל</span><div class="stack">'
+    +ACTS.map(function(a,i){ return '<button class="chip" data-act="su-act" data-v="'+i+'" aria-pressed="'+(ui.su.act===i)+'">'+a.label+'<small>'+a.sub+'</small></button>'; }).join('')
+    +'</div></div>'
+    +'<p class="msg err">'+ui.suMsg+'</p>'
+    +'<button class="btn" data-act="su-save">'+(edit?'שמירה':'חישוב יעדים והתחלה')+'</button>'
+    +(edit?'<button class="btn alt" data-act="su-cancel">ביטול</button>':'')
+    +'</section>';
+  return h;
+}
+function saveSetup(){
+  var age=toNum($('#su-age').value), hgt=toNum($('#su-h').value), w=toNum($('#su-w').value), goal=toNum($('#su-goal').value), sd=$('#su-date').value;
+  if(hgt>1&&hgt<2.5) hgt=Math.round(hgt*100);
+  var err=!(age>=14&&age<=100)?'גיל בין 14 ל־100.'
+    :!(hgt>=120&&hgt<=230)?'גובה בסנטימטרים, למשל 158.'
+    :!(w>=30&&w<=300)?'משקל בקילוגרמים, למשל 60.5.'
+    :!isNaN(goal)&&!(goal>=30&&goal<=300)?'משקל היעד בקילוגרמים, למשל 54.'
+    :sd&&sd>todayStr()?'תאריך ההתחלה לא יכול להיות בעתיד.':'';
+  if(err){ ui.suMsg=err; render(); return; }
+  var wasEdit=!!S.profile, old=S.profile;
+  S.profile={sex:ui.su.sex,age:Math.round(age),height:Math.round(hgt),startKg:Math.round(w*10)/10,goalKg:isNaN(goal)?null:Math.round(goal*10)/10,act:ui.su.act,startDate:isDate(sd)?sd:null};
+  var calc=calcTargets(S.profile,lastWeight());
+  if(!wasEdit||!S.targets) S.targets=calc;
+  else if(old.age!==S.profile.age||old.height!==S.profile.height||old.sex!==S.profile.sex||old.act!==S.profile.act||old.goalKg!==S.profile.goalKg){
+    S.targets={k:calc.k,p:calc.p,c:S.targets.c}; ui.tMsg='היעדים חושבו מחדש לפי הפרטים החדשים.';
+  }
+  ui.su=null; ui.suMsg=''; ui.editProfile=false;
+  if(!wasEdit){ ui.tab='daily'; ui.date=todayStr(); }
+  save(); render(); window.scrollTo(0,0);
+}
+
+/* ---------- backup ---------- */
+function exportText(){ var o=clone(S); return JSON.stringify({app:'my-keto',version:1,exportedAt:new Date().toISOString(),data:o},null,1); }
+function bk(msg,err){ ui.bkMsg=msg; ui.bkErr=!!err; }
+function markBackup(){ S.lastBackup=Date.now(); save(); }
+function doExport(){
+  var data=exportText(), name='keto-backup-'+todayStr()+'.json';
+  function done(){ render(); }
+  try{
+    var file=new File([data],name,{type:'application/json'});
+    if(navigator.canShare&&navigator.share&&navigator.canShare({files:[file]})){
+      navigator.share({files:[file]}).then(function(){ markBackup(); bk('הגיבוי נשמר.'); done(); },function(e){
+        if(e&&e.name==='AbortError'){ bk(''); done(); return; }
+        ui.bkText=data; bk('אפשר להעתיק את הגיבוי מהתיבה.'); done();
+      });
+      return;
+    }
+  }catch(e){}
+  if(isStandalone()){ ui.bkText=data; bk('אפשר להעתיק את הגיבוי מהתיבה ולשמור אותו בפתקים או בהודעה לעצמך.'); done(); return; }
+  try{
+    var a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([data],{type:'application/json'})); a.download=name;
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(function(){ URL.revokeObjectURL(a.href); },4000);
+    markBackup(); bk('קובץ הגיבוי ירד.');
+  }catch(e){ ui.bkText=data; bk('אפשר להעתיק את הגיבוי מהתיבה.'); }
+  done();
+}
+function doCopy(){
+  var data=exportText();
+  function fallback(){ ui.bkText=data; bk('ההעתקה נחסמה. הגיבוי מוצג בתיבה – אפשר לסמן ולהעתיק.'); render(); var t=$('#bk-text'); if(t){ t.focus(); t.select(); } }
+  try{ navigator.clipboard.writeText(data).then(function(){ markBackup(); bk('הגיבוי הועתק. אפשר להדביק אותו בפתקים או בהודעה לעצמך.'); render(); },fallback); }catch(e){ fallback(); }
+}
+function stageImport(text){
+  var o; try{ o=JSON.parse(text); }catch(e){ o=null; }
+  var d=o&&o.app==='my-keto'&&o.data&&typeof o.data==='object'?normState(o.data):null;
+  if(!d||!d.profile){ ui.pendingImport=null; bk('זה לא קובץ גיבוי של האפליקציה הזו.',true); }
+  else{ ui.pendingImport=d; bk(''); ui.bkText=''; }
+  render();
+}
+
+/* ---------- render ---------- */
+function render(){
+  var v=$('#view'), tabs=$('#tabs');
+  if(!S.profile){ tabs.hidden=true; v.innerHTML=setupHtml(false); return; }
+  tabs.hidden=false;
+  v.innerHTML=ui.tab==='weigh'?weighHtml():ui.tab==='week'?weekHtml():ui.tab==='settings'?settingsHtml():dailyHtml();
+  document.querySelectorAll('.tab').forEach(function(b){ var on=b.dataset.v===ui.tab; b.classList.toggle('is-on',on); if(on) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current'); });
+}
+
+/* ---------- actions ---------- */
+function onAct(el){
+  var act=el.dataset.act, v=el.dataset.v, meal=el.dataset.meal, id=el.dataset.id, t=todayStr();
+  switch(act){
+    case 'tab':
+      ui.tab=v; ui.pick=null; ui.newFood=null; ui.delW=null; ui.editProfile=false; ui.su=null; ui.suMsg='';
+      ui.wMsg=''; ui.bkMsg=''; ui.shareMsg=''; ui.tMsg=''; ui.week=null;
+      render(); window.scrollTo(0,0); return;
+    case 'day':
+      var nd=addDays(ui.date,+v); if(nd>t) return;
+      ui.date=nd; ui.pick=null; ui.newFood=null; render(); return;
+    case 'today': ui.date=t; ui.pick=null; ui.newFood=null; render(); return;
+    case 'goday': ui.date=v; ui.tab='daily'; ui.pick=null; render(); window.scrollTo(0,0); return;
+    case 'intro-ok': S.introSeen=true; save(); render(); return;
+    case 'add':
+      editDay(ui.date,function(d){ var o=d.m[meal], f=food(id); if(!f) return; o[id]=clampQ(o[id]?o[id]+(f.step||1):+el.dataset.q||1); });
+      render(); return;
+    case 'q':
+      editDay(ui.date,function(d){ var o=d.m[meal], f=food(id); if(!f||!o[id]) return; var q=clampQ(o[id]+(+v)*(f.step||1)); if(q<=0) delete o[id]; else o[id]=q; });
+      render(); return;
+    case 'pick': ui.pick=meal||null; ui.newFood=null; render(); return;
+    case 'newfood': ui.newFood=meal||null; render(); if(meal){ var n=$('#cf-name'); if(n) n.focus(); } return;
+    case 'savefood':
+      var name=($('#cf-name').value||'').trim(), k=toNum($('#cf-k').value), c=toNum($('#cf-c').value), p=toNum($('#cf-p').value);
+      var m=$('#cf-msg');
+      if(!name){ m.textContent='צריך שם למאכל.'; return; }
+      if(!(k>=0&&k<5000)){ m.textContent='צריך מספר קלוריות (אפשר הערכה).'; return; }
+      var cid='c_'+Date.now().toString(36);
+      S.custom[cid]={label:name.slice(0,40),k:k,c:c>=0?c:0,p:p>=0?p:0,h:false};
+      editDay(ui.date,function(d){ d.m[meal][cid]=1; });
+      ui.newFood=null; render(); return;
+    case 'copy':
+      var src=S.days[v]; if(!src) return;
+      S.days[ui.date]=clone(src); save(); render(); return;
+    case 'wper':
+      var on=el.getAttribute('aria-pressed')!=='true'; el.setAttribute('aria-pressed',String(on)); ui.wPer=on; return;
+    case 'wsave':
+      var wd=$('#w-date').value, kg=toNum($('#w-kg').value), per=$('[data-act="wper"]').getAttribute('aria-pressed')==='true';
+      if(!isDate(wd)||wd>t){ ui.wMsg='צריך תאריך עד היום.'; ui.wErr=true; render(); return; }
+      if(!(kg>=30&&kg<=300)){ ui.wMsg='צריך משקל בקילוגרמים, למשל 59.4.'; ui.wErr=true; render(); return; }
+      var had=!!S.weights[wd];
+      S.weights[wd]={kg:Math.round(kg*10)/10,per:per};
+      ui.wPer=false; ui.wDate=null; ui.wErr=false; ui.wMsg=had?'השקילה עודכנה.':'השקילה נשמרה ✓'; ui.delW=null;
+      save(); render(); return;
+    case 'wpert': if(S.weights[v]){ S.weights[v].per=!S.weights[v].per; save(); render(); } return;
+    case 'wdel': ui.delW=v; render(); return;
+    case 'wdel2': delete S.weights[v]; ui.delW=null; ui.wMsg=''; save(); render(); return;
+    case 'week':
+      var cur=mondayOf(t), nw=addDays(ui.week||mondayOf(addDays(t,-1)),7*(+v));
+      if(nw>cur) return;
+      ui.week=nw; ui.shareMsg=''; render(); return;
+    case 'share':
+      var txt=shareText(weekData(ui.week||mondayOf(addDays(t,-1))));
+      if(navigator.share){
+        navigator.share({text:txt}).then(function(){ ui.shareMsg=''; },function(e){ if(!(e&&e.name==='AbortError')){ copyShare(txt); } });
+      } else copyShare(txt);
+      return;
+    case 'su-sex': ui.su.sex=v; document.querySelectorAll('[data-act="su-sex"]').forEach(function(b){ b.setAttribute('aria-pressed',String(b.dataset.v===v)); }); return;
+    case 'su-act': ui.su.act=+v; document.querySelectorAll('[data-act="su-act"]').forEach(function(b){ b.setAttribute('aria-pressed',String(b.dataset.v===v)); }); return;
+    case 'su-save': saveSetup(); return;
+    case 'su-cancel': ui.editProfile=false; ui.su=null; ui.suMsg=''; render(); return;
+    case 'editprofile': ui.editProfile=true; ui.su=null; ui.suMsg=''; render(); window.scrollTo(0,0); return;
+    case 'recalc': var cl=calcTargets(S.profile,lastWeight()); S.targets={k:cl.k,p:cl.p,c:S.targets.c}; ui.tMsg='היעדים עודכנו.'; save(); render(); return;
+    case 'fooddel': if(S.custom[v]){ S.custom[v].h=true; save(); render(); } return;
+    case 'export': doExport(); return;
+    case 'copybk': doCopy(); return;
+    case 'imp-paste': stageImport(($('#imp-text')||{}).value||''); return;
+    case 'imp-apply': if(ui.pendingImport){ S=ui.pendingImport; ui.pendingImport=null; save(); bk('הגיבוי נטען.'); render(); } return;
+    case 'imp-cancel': ui.pendingImport=null; bk(''); render(); return;
+  }
+}
+function copyShare(txt){
+  try{ navigator.clipboard.writeText(txt).then(function(){ ui.shareMsg='הסיכום הועתק – אפשר להדביק בוואטסאפ.'; render(); },function(){ ui.shareMsg='אפשר לסמן ולהעתיק את הסיכום מהתיבה.'; render(); }); }
+  catch(e){ ui.shareMsg='אפשר לסמן ולהעתיק את הסיכום מהתיבה.'; render(); }
+}
+function onTargetChange(el){
+  var key={'t-k':'k','t-p':'p','t-c':'c'}[el.id], val=toNum(el.value);
+  var lim={k:[800,5000],p:[20,300],c:[5,100]}[key];
+  if(!(val>=lim[0]&&val<=lim[1])){ ui.tMsg='מספר בין '+lim[0]+' ל־'+lim[1]+'.'; el.value=S.targets[key]; render(); return; }
+  S.targets[key]=Math.round(val); ui.tMsg='נשמר ✓'; save(); render();
+}
+
+document.addEventListener('click',function(e){
+  var el=e.target.closest('[data-act]');
+  if(!el||!el.closest('#app')||el.disabled) return;
+  onAct(el);
+});
+document.addEventListener('change',function(e){
+  var el=e.target;
+  if(el.id==='t-k'||el.id==='t-p'||el.id==='t-c'){ onTargetChange(el); return; }
+  if(el.id==='w-date'){
+    var typed=($('#w-kg')||{}).value||'';
+    ui.wDate=el.value||null; ui.wMsg=''; render();
+    var kgEl=$('#w-kg'); if(kgEl&&typed&&!kgEl.value) kgEl.value=typed;
+    return;
+  }
+  if(el.id==='imp-file'&&el.files&&el.files[0]){
+    var r=new FileReader(); r.onload=function(){ stageImport(String(r.result||'')); }; r.onerror=function(){ bk('לא הצלחתי לקרוא את הקובץ.',true); render(); };
+    r.readAsText(el.files[0]);
+  }
+});
+document.addEventListener('keydown',function(e){
+  if(e.key!=='Enter'||!e.target||e.target.tagName!=='INPUT') return;
+  var id=e.target.id;
+  if(id==='w-kg'){ e.preventDefault(); onAct($('[data-act="wsave"]')); }
+  else if(/^cf-/.test(id)){ e.preventDefault(); var b=$('[data-act="savefood"]'); if(b) onAct(b); }
+});
+var lastToday=todayStr();
+document.addEventListener('visibilitychange',function(){
+  if(document.visibilityState!=='visible') return;
+  var t=todayStr();
+  if(t!==lastToday){ if(ui.date===lastToday) ui.date=t; lastToday=t; ui.week=null; render(); }
+});
+
+load();
+try{ if(navigator.storage&&navigator.storage.persist) navigator.storage.persist().catch(function(){}); }catch(e){}
+render();
+})();
+</script>
+<!--SW-->
+</body>
+</html>
