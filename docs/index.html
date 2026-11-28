@@ -346,10 +346,10 @@ var FOODS={
   steakstrips:{label:'רצועות סטייק',g:100,kg:2.0,pg:0.21,note:'משקל נא'},
   /* Raw-meat reading of "asado on the plancha" from before 2026-11-28; it is a cold cut (asadoslice). Kept so logged days add up. */
   asadoplancha:{label:'אסאדו נא על הפלנצ׳ה (רישום ישן)',g:100,kg:3.3,pg:0.16,note:'משקל נא, בלי עצם'},
-  /* Sliced cold cuts warmed in the egg pan. No label yet: estimates from similar Israeli deli meats
-     (corned beef ≈ 130 kcal / 19 g protein per 100 g, deli asado ≈ 170 kcal / 17 g protein per 100 g). */
-  cornedbeef:{label:'קורנדביף – פרוסות',g:20,kg:1.3,pg:0.19,cnt:true,note:'הכמות = מספר הפרוסות · נקניק קר, מחממים במחבת של הביצים'},
-  asadoslice:{label:'אסאדו על הפלנצ׳ה – פרוסות',g:10,kg:1.7,pg:0.17,cnt:true,note:'הכמות = מספר הפרוסות · נקניק קר, מחממים במחבת של הביצים'},
+  /* Hendel's sliced cold cuts (bought by weight at the deli, no nutrition label), warmed in the egg pan.
+     Estimates: brisket corned beef ≈ 160 kcal / 20 g protein per 100 g; the asado is heavily marbled ≈ 250 kcal / 18 g protein. */
+  cornedbeef:{label:'קורנדביף – פרוסות',g:20,kg:1.6,pg:0.2,cnt:true,note:'הכמות = מספר הפרוסות · נקניק קר, מחממים במחבת של הביצים'},
+  asadoslice:{label:'אסאדו על הפלנצ׳ה – פרוסות',g:10,kg:2.5,pg:0.18,cnt:true,note:'הכמות = מספר הפרוסות · נקניק קר, מחממים במחבת של הביצים'},
   schnitzpargit:{label:'שניצל פרגית',g:300,kg:1.5,pg:0.19,note:'משקל נא'},
   schnitzbreast:{label:'שניצל חזה עוף דק',g:300,kg:1.2,pg:0.225,note:'משקל נא'},
   schnitzfillet:{label:'שניצל פילה עוף',g:300,kg:1.2,pg:0.225,note:'משקל נא'},
@@ -364,6 +364,11 @@ var FOODS={
   cauliroast:{label:'פרחי כרובית בתנור',g:200,kg:0.25,pg:0.019,note:'משקל נא'},
   eggplantroast:{label:'חציל בתנור',g:250,kg:0.25,pg:0.01,note:'משקל נא'},
   eggplantgrill:{label:'חציל במנגל',g:250,kg:0.25,pg:0.01,note:'משקל נא'},
+  /* Deli-sliced cheeses, by slice (≈20 g); typical values per 100 g: goat gouda 360 kcal / 25 g protein,
+     manchego aged 12 months 430 / 27, vintage cheddar 410 / 25. */
+  goatgouda:{label:'גאודה עיזים – פרוסות',g:20,kg:3.6,pg:0.25,cnt:true,note:'הכמות = מספר הפרוסות'},
+  manchego:{label:'מנצ׳גו מיושנת – פרוסות',g:20,kg:4.3,pg:0.27,cnt:true,note:'הכמות = מספר הפרוסות'},
+  agedcheddar:{label:'צ׳דר מיושן – פרוסות',g:20,kg:4.1,pg:0.25,cnt:true,note:'הכמות = מספר הפרוסות'},
   cheddar:{label:'פרוסת צ׳דר',k:85,p:5},
   buche:{label:'פרוסת בושה',k:75,p:4.5},
   hardcheese:{label:'גבינה קשה אחרת (20 גרם)',k:75,p:5},
@@ -395,7 +400,8 @@ var FATS=['tallow','oliveoil','butter20'];
 var FAT_IDS=FATS.concat(['butter','eggbutter']);
 var LUNCH_GROUPS=[
   {label:function(d){ return 'שומן לטיגון'+(Number(d.lunch.eggs)>0&&!FAT_IDS.some(function(id){ return d.lunch.items[id]; })?' – <span class="todo">עוד לא נבחר</span>':''); },ids:FATS},
-  {label:'תוספת חלבון – רק כשמתחשק',ids:['cornedbeef','asadoslice','steakstrips','bacon','pulledasado','cheddar','buche','hardcheese','tuna']}
+  {label:'מהמעדנייה – נקניקים וגבינות, לפי פרוסות',ids:['cornedbeef','asadoslice','goatgouda','manchego','agedcheddar','hardcheese']},
+  {label:'תוספת חלבון – רק כשמתחשק',ids:['steakstrips','bacon','pulledasado','buche','tuna']}
 ];
 var DINNER_GROUPS=[
   {label:'נתחים על הגריל והמבורגרים',ids:['entrecote','sinta','sintabone','burger','lambchop','asado','asadobites']},

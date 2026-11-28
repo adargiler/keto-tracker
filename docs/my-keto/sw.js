@@ -1,5 +1,5 @@
 /* Offline support. Pages come from the network when it answers within 3 seconds, otherwise from the cache. */
-const CACHE = 'myketo-f9969db359';
+const CACHE = 'myketo-0a01b9d0dc';
 const SHELL = ['./', 'manifest.webmanifest', 'icon-180.png', 'icon-192.png'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
