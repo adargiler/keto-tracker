@@ -141,6 +141,10 @@ bdi,[dir="ltr"]{unicode-bidi:isolate}
 .chip.wide{width:100%;border-radius:14px;text-align:start}
 .chip.last:not([aria-pressed="true"]){border-style:dashed;border-color:var(--accent)}
 .fryq{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.cuprow{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:12px;background:var(--surface);border:1px solid var(--line)}
+.cuprow .cn{font-size:15px;white-space:nowrap}
+.cuprow .cs{flex:1;min-width:0;font-size:12px;color:var(--muted);line-height:1.3}
+.cuprow .cx{min-width:36px}
 .todo{color:var(--warn);font-weight:700}
 .pk-tabs{display:flex;flex-wrap:wrap;gap:6px}
 .pk-tab{min-height:36px;padding:4px 12px;border-radius:999px;border:1px solid var(--line);background:none;font-size:13px;color:var(--muted)}
@@ -387,7 +391,9 @@ var FOODS={
   darkchoc:{label:'שוקולד מריר 85%',sub:'קובייה (כ־10 גרם)',k:58,p:1,c:2,grp:'sweet'},
   berries:{label:'תותים / פירות יער',sub:'חצי כוס (כ־75 גרם)',k:30,p:0.7,c:4.2,grp:'sweet',step:0.5},
   /* coffee and drinks */
-  coffee:{label:'קפה עם שמנת 38%',sub:'רבע כוס שמנת (כ־60 מ״ל), בלי סוכר',k:210,p:1.3,c:1.9,grp:'drink'},
+  /* Coffee is logged per cup in the coffee panel (day.cups = tablespoons of sweet cream in each cup).
+     This fixed ¼-cup item is from before 2026-11-28; kept so days logged with it still add up. */
+  coffee:{label:'קפה עם רבע כוס שמנת 38%',sub:'רבע כוס שמנת (כ־60 מ״ל), בלי סוכר',k:210,p:1.3,c:1.9,grp:'drink',hide:true},
   creamtbsp:{label:'שמנת מתוקה 38%',sub:'כף (15 מ״ל) – לקפה או מוקצפת לקינוח',k:53,p:0.3,c:0.5,grp:'drink'},
   proteinscoop:{label:'אבקת חלבון',sub:'סקופ (כ־30 גרם)',k:110,p:24,c:1.5,grp:'drink'}
 };
@@ -405,13 +411,14 @@ var GROUPS=[
 /* usual = starting one-tap chips [food id, quantity of the first tap], used until the person's own habits show up.
    grp = the food group the picker opens on. */
 var MEALS=[
-  {id:'morning',label:'בוקר',grp:'drink',usual:[['coffee',1]]},
+  {id:'morning',label:'בוקר',grp:'drink',usual:[]},
   {id:'lunch',label:'צהריים',grp:'egg',usual:[['egg',3]]},
   {id:'snack',label:'ביניים',grp:'nut',usual:[['pecan',10],['brazil',2],['goatgouda',1]]},
   {id:'dinner',label:'ערב',grp:'meat',usual:[['burger',1],['pargit',2],['entrecote',1],['sinta',1],['cauli',1],['oil',1]]},
   {id:'dessert',label:'קינוח',grp:'sweet',usual:[['brownie',1],['icecream',4],['darkchoc',2]]}
 ];
 var MEAL_LABEL={}; MEALS.forEach(function(m){ MEAL_LABEL[m.id]=m.label; });
+var MAX_CUPS=8, DEFAULT_SPOONS=4; /* her usual: ¼ cup of cream ≈ 4 tablespoons */
 var EGG_STYLES=['egg','eggsoft','eggsunny','eggscrambled'];
 var FRY=['fryoil','frybutter','frytallow','frycoconut','fryavocado','fryspray'];
 /* Meals that always show the eggs panel; any other meal shows it once it has eggs in it. */
@@ -451,6 +458,10 @@ function normDay(d,custom){
     if(src&&typeof src==='object') Object.keys(src).forEach(function(id){ var q=+src[id]; if(q>0&&(FOODS[id]||custom[id])){ o[id]=clampQ(q); any=true; } });
     out.m[m.id]=o;
   });
+  if(Array.isArray(d.cups)&&d.cups.length){
+    out.cups=d.cups.slice(0,MAX_CUPS).map(function(x){ x=+x; return x>0?Math.min(20,Math.round(x*2)/2):0; });
+    any=true;
+  }
   return any?out:null;
 }
 function normState(o){
@@ -496,14 +507,24 @@ function calcTargets(pr,kg){
 function food(id){ return FOODS[id]||S.custom[id]||null; }
 function itemTot(id,q){ var f=food(id); return f?{k:f.k*q,p:f.p*q,c:f.c*q}:{k:0,p:0,c:0}; }
 function mealTot(o){ var r={k:0,p:0,c:0}; for(var id in o){ var x=itemTot(id,o[id]); r.k+=x.k; r.p+=x.p; r.c+=x.c; } return r; }
-function dayTot(d){ var r={k:0,p:0,c:0}; if(!d) return r; MEALS.forEach(function(m){ var x=mealTot(d.m[m.id]||{}); r.k+=x.k; r.p+=x.p; r.c+=x.c; }); return r; }
-function dayLogged(d){ return !!d&&MEALS.some(function(m){ return d.m[m.id]&&Object.keys(d.m[m.id]).length>0; }); }
+/* Cream in the day's coffees: tablespoons of sweet cream 38%, summed over the cups. */
+function cupSpoons(d){ return d&&Array.isArray(d.cups)?d.cups.reduce(function(a,b){ return a+(+b||0); },0):0; }
+function cupsTot(d){ var s=cupSpoons(d), f=FOODS.creamtbsp; return {k:s*f.k,p:s*f.p,c:s*f.c}; }
+function dayTot(d){
+  var r={k:0,p:0,c:0}; if(!d) return r;
+  MEALS.forEach(function(m){ var x=mealTot(d.m[m.id]||{}); r.k+=x.k; r.p+=x.p; r.c+=x.c; });
+  var cx=cupsTot(d); r.k+=cx.k; r.p+=cx.p; r.c+=cx.c;
+  return r;
+}
+/* A day counts as logged once it has food or cream; black coffee alone is kept but does not count. */
+function dayLogged(d){ return !!d&&(cupSpoons(d)>0||MEALS.some(function(m){ return d.m[m.id]&&Object.keys(d.m[m.id]).length>0; })); }
 function editDay(date,fn){
   var d=S.days[date];
   if(!d){ d={m:{}}; MEALS.forEach(function(m){ d.m[m.id]={}; }); S.days[date]=d; }
   MEALS.forEach(function(m){ if(!d.m[m.id]) d.m[m.id]={}; });
   fn(d);
-  if(!dayLogged(d)) delete S.days[date];
+  if(d.cups&&!d.cups.length) delete d.cups;
+  if(!dayLogged(d)&&!d.cups) delete S.days[date];
   save();
 }
 function prevLogged(date){
@@ -688,10 +709,36 @@ function eggPanelHtml(mealId,o){
   }
   return h+'</div>';
 }
+/* ---------- coffee panel: tablespoons of sweet cream in each cup of the day ---------- */
+function lastCups(date){
+  var ks=Object.keys(S.days).filter(function(k){ return k!==date&&S.days[k].cups&&S.days[k].cups.length; }).sort().reverse();
+  return ks.length?S.days[ks[0]].cups.slice():null;
+}
+function spoonsTxt(n){ return L(qtxt(n))+' '+(n===1?'כף':'כפות'); }
+function coffeePanelHtml(d){
+  var cups=(d&&d.cups)||[], f=FOODS.creamtbsp, cx=cupsTot(d);
+  var h='<div class="eggb"><div class="card-h"><span class="lbl">קפה – כמה כפות שמנת מתוקה בכל כוס</span>'+(cupSpoons(d)?'<span class="mt">'+L(num(cx.k))+' קק״ל</span>':'')+'</div>';
+  if(!cups.length){
+    var lc=lastCups(ui.date);
+    if(lc) h+='<button class="chip add wide" data-act="cupsame">+ כמו בפעם הקודמת: '+(lc.length===1?'כוס אחת':L(lc.length)+' כוסות')+' – '+lc.map(function(n){ return n?spoonsTxt(n):'שחור'; }).join(' + ')+'</button>';
+  }
+  cups.forEach(function(n,i){
+    h+='<div class="cuprow"><b class="cn">כוס '+L(i+1)+'</b><span class="cs">'+(n?spoonsTxt(n)+' · '+L(num(n*f.k))+' קק״ל':'שחור, בלי שמנת')+'</span>'
+      +'<div class="stp sm"><button data-act="cup" data-i="'+i+'" data-v="-1" aria-label="כף שמנת אחת פחות בכוס '+(i+1)+'"'+(n?'':' disabled')+'>−</button>'
+      +'<b>'+L(qtxt(n))+'</b>'
+      +'<button data-act="cup" data-i="'+i+'" data-v="1" aria-label="עוד כף שמנת בכוס '+(i+1)+'">+</button></div>'
+      +'<button class="tagbtn cx" data-act="cupdel" data-i="'+i+'" aria-label="הסרת כוס '+(i+1)+'">✕</button></div>';
+  });
+  if(cups.length<MAX_CUPS) h+='<button class="more" data-act="cupadd">+ '+(cups.length?'עוד כוס קפה':'כוס קפה')+'</button>';
+  h+='<p class="hint">כף = 15 מ״ל שמנת מתוקה 38% ≈ '+L(Math.round(f.k))+' קק״ל · רבע כוס ≈ 4 כפות.</p>';
+  return h+'</div>';
+}
 function mealHtml(m,d){
-  var o=(d&&d.m[m.id])||{}, ids=Object.keys(o), t=mealTot(o), panel=hasEggPanel(m.id,o);
+  var o=(d&&d.m[m.id])||{}, ids=Object.keys(o), t=mealTot(o), panel=hasEggPanel(m.id,o), coffee=m.id==='morning';
+  if(coffee){ var cx=cupsTot(d); t={k:t.k+cx.k,p:t.p+cx.p,c:t.c+cx.c}; }
   var h='<section class="card"><div class="card-h"><h3>'+m.label+'</h3>'
-    +(ids.length?'<span class="mt">'+L(num(t.k))+' קק״ל · '+L(fmtC(t.c))+' ג׳ פחמ׳</span>':'')+'</div>';
+    +(t.k>0||ids.length?'<span class="mt">'+L(num(t.k))+' קק״ל · '+L(fmtC(t.c))+' ג׳ פחמ׳</span>':'')+'</div>';
+  if(coffee) h+=coffeePanelHtml(d);
   if(panel) h+=eggPanelHtml(m.id,o);
   ids.forEach(function(id){ if(!(panel&&isEggOrFry(id))) h+=rowHtml(m.id,id,o[id]); });
   var usual=usualFor(m,ui.date).filter(function(u){ return !o[u[0]]&&!(panel&&isEggOrFry(u[0])); });
@@ -1126,6 +1173,24 @@ function onAct(el){
         FRY.forEach(function(f){ delete o[f]; });
         o[id]=q;
       });
+      render(); return;
+    case 'cupadd':
+      editDay(ui.date,function(d){
+        d.cups=d.cups||[]; if(d.cups.length>=MAX_CUPS) return;
+        var lc=lastCups(ui.date);
+        d.cups.push(d.cups.length?d.cups[d.cups.length-1]:lc?lc[0]:DEFAULT_SPOONS);
+      });
+      render(); return;
+    case 'cup':
+      var ci=+el.dataset.i;
+      editDay(ui.date,function(d){ if(d.cups&&d.cups[ci]!=null) d.cups[ci]=Math.max(0,Math.min(20,d.cups[ci]+(+v))); });
+      render(); return;
+    case 'cupdel':
+      var di=+el.dataset.i;
+      editDay(ui.date,function(d){ if(d.cups) d.cups.splice(di,1); });
+      render(); return;
+    case 'cupsame':
+      editDay(ui.date,function(d){ var lc=lastCups(ui.date); if(lc) d.cups=lc; });
       render(); return;
     case 'eggsame':
       editDay(ui.date,function(d){ var le=lastEggs(meal,ui.date), o=d.m[meal]; if(le) Object.keys(le).forEach(function(k){ o[k]=le[k]; }); });
