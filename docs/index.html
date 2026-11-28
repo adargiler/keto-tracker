@@ -344,7 +344,12 @@ var FOODS={
   seafoodbutter:{label:'שרימפס / פירות ים בחמאה',g:350,kg:1.41,pg:0.19},
   grill:{label:'נתח על הגריל / המבורגר',g:400,kg:2.85,pg:0.18},
   steakstrips:{label:'רצועות סטייק',g:100,kg:2.0,pg:0.21,note:'משקל נא'},
-  asadoplancha:{label:'אסאדו על הפלנצ׳ה',g:100,kg:3.3,pg:0.16,note:'משקל נא, בלי עצם'},
+  /* Raw-meat reading of "asado on the plancha" from before 2026-11-28; it is a cold cut (asadoslice). Kept so logged days add up. */
+  asadoplancha:{label:'אסאדו נא על הפלנצ׳ה (רישום ישן)',g:100,kg:3.3,pg:0.16,note:'משקל נא, בלי עצם'},
+  /* Sliced cold cuts warmed in the egg pan. No label yet: estimates from similar Israeli deli meats
+     (corned beef ≈ 130 kcal / 19 g protein per 100 g, deli asado ≈ 170 kcal / 17 g protein per 100 g). */
+  cornedbeef:{label:'קורנדביף – פרוסות',g:20,kg:1.3,pg:0.19,cnt:true,note:'הכמות = מספר הפרוסות · נקניק קר, מחממים במחבת של הביצים'},
+  asadoslice:{label:'אסאדו על הפלנצ׳ה – פרוסות',g:10,kg:1.7,pg:0.17,cnt:true,note:'הכמות = מספר הפרוסות · נקניק קר, מחממים במחבת של הביצים'},
   schnitzpargit:{label:'שניצל פרגית',g:300,kg:1.5,pg:0.19,note:'משקל נא'},
   schnitzbreast:{label:'שניצל חזה עוף דק',g:300,kg:1.2,pg:0.225,note:'משקל נא'},
   schnitzfillet:{label:'שניצל פילה עוף',g:300,kg:1.2,pg:0.225,note:'משקל נא'},
@@ -390,7 +395,7 @@ var FATS=['tallow','oliveoil','butter20'];
 var FAT_IDS=FATS.concat(['butter','eggbutter']);
 var LUNCH_GROUPS=[
   {label:function(d){ return 'שומן לטיגון'+(Number(d.lunch.eggs)>0&&!FAT_IDS.some(function(id){ return d.lunch.items[id]; })?' – <span class="todo">עוד לא נבחר</span>':''); },ids:FATS},
-  {label:'תוספת חלבון – רק כשמתחשק',ids:['steakstrips','asadoplancha','bacon','pulledasado','cheddar','buche','hardcheese','tuna']}
+  {label:'תוספת חלבון – רק כשמתחשק',ids:['cornedbeef','asadoslice','steakstrips','bacon','pulledasado','cheddar','buche','hardcheese','tuna']}
 ];
 var DINNER_GROUPS=[
   {label:'נתחים על הגריל והמבורגרים',ids:['entrecote','sinta','sintabone','burger','lambchop','asado','asadobites']},
@@ -1433,7 +1438,7 @@ function onAct(el){
       var fm=el.dataset.meal, fd=FOODS[v]; if(!fd||!MEALS_ITEMS[fm]) return;
       mutate(date,function(d){
         var it=d[fm].items[v], q=it?Number(it.q)||0:0;
-        q+=act==='fadd'?1:Number(el.dataset.d)*(fd.kg!=null?0.5:1);
+        q+=act==='fadd'?1:Number(el.dataset.d)*(fd.kg!=null&&!fd.cnt?0.5:1);
         if(q<=0) delete d[fm].items[v];
         else if(it) it.q=Math.min(50,q);
         else d[fm].items[v]=fd.kg!=null?{q:q,g:fd.g}:{q:q};
@@ -1516,8 +1521,8 @@ function onInput(el){
   else if(kind==='fqty'){
     var qm=el.dataset.meal, qid=el.dataset.food, qf=FOODS[qid]; if(!qf||!MEALS_ITEMS[qm]) return;
     var qn=toNum(el.value); qn=isNaN(qn)?0:Math.max(0,Math.min(50,Math.round(qn)));
-    mutate(date,function(d){ if(qn>0) d[qm].items[qid]={q:qn}; else delete d[qm].items[qid]; stamp(d,qm); });
-    var qs=$('#fk-'+qm+'-'+qid); if(qs) qs.innerHTML=foodSub(qf,{q:qn});
+    var qd=mutate(date,function(d){ var it=d[qm].items[qid]; if(qn<=0) delete d[qm].items[qid]; else if(it) it.q=qn; else d[qm].items[qid]=qf.kg!=null?{q:qn,g:qf.g}:{q:qn}; stamp(d,qm); });
+    var qs=$('#fk-'+qm+'-'+qid); if(qs) qs.innerHTML=foodSub(qf,qd[qm].items[qid]||{q:0});
     updateSummary(); pendingRender=true;
   }
   else if(kind==='notes'){ mutate(date,function(d){ d.notes=String(el.value).slice(0,600); }); updateSummary(); }

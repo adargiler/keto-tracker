@@ -323,7 +323,11 @@ var FOODS={
   padkrapow:{label:'פאד קפאו קטוגני + ביצת עין',sub:'מנה (כ־200 גרם)',k:535,p:40,c:3,grp:'meat',step:0.5},
   asado:{label:'אסאדו / שפונדרה',sub:'מנה (כ־250 גרם עם העצם)',k:675,p:25,c:0,grp:'meat',step:0.5},
   asadobites:{label:'חטיפי אסאדו',sub:'מנה (כ־150 גרם נא עם העצם)',k:405,p:15,c:0,grp:'meat',step:0.5},
-  asadoplancha:{label:'אסאדו על הפלנצ׳ה',sub:'100 גרם נא, בלי עצם',k:330,p:16,c:0,grp:'meat',step:0.5},
+  /* Raw-meat reading from before 2026-11-28; "asado on the plancha" is a sliced cold cut (asadoslice). Kept so logged days add up. */
+  asadoplancha:{label:'אסאדו נא על הפלנצ׳ה',sub:'100 גרם נא, בלי עצם',k:330,p:16,c:0,grp:'meat',step:0.5,hide:true},
+  /* Sliced cold cuts warmed in the egg pan; estimates until there is a label (same per-gram figures as index.html). */
+  cornedbeef:{label:'פרוסות קורנדביף',sub:'פרוסה (כ־20 גרם) – נקניק קר, אפשר לחמם במחבת של הביצים',k:26,p:3.8,c:0.2,grp:'meat'},
+  asadoslice:{label:'פרוסות אסאדו על הפלנצ׳ה',sub:'פרוסה (כ־10 גרם) – נקניק קר, אפשר לחמם במחבת של הביצים',k:17,p:1.7,c:0.1,grp:'meat'},
   pulledasado:{label:'אסאדו מפורק',sub:'100 גרם',k:300,p:22,c:0,grp:'meat',step:0.5},
   lambchop:{label:'צלע טלה',sub:'צלע אחת (כ־100 גרם עם העצם)',k:210,p:10.5,c:0,grp:'meat'},
   bacon:{label:'רצועת בייקון בקר (רו בייקון)',sub:'רצועה אחת',k:60,p:2.5,c:0,grp:'meat'},
@@ -412,7 +416,7 @@ var GROUPS=[
    grp = the food group the picker opens on. */
 var MEALS=[
   {id:'morning',label:'בוקר',grp:'drink',usual:[]},
-  {id:'lunch',label:'צהריים',grp:'egg',usual:[['egg',3]]},
+  {id:'lunch',label:'צהריים',grp:'egg',usual:[['egg',3],['cornedbeef',2],['asadoslice',3]]},
   {id:'snack',label:'ביניים',grp:'nut',usual:[['pecan',10],['brazil',2],['goatgouda',1]]},
   {id:'dinner',label:'ערב',grp:'meat',usual:[['burger',1],['pargit',2],['entrecote',1],['sinta',1],['cauli',1],['oil',1]]},
   {id:'dessert',label:'קינוח',grp:'sweet',usual:[['brownie',1],['icecream',4],['darkchoc',2]]}
